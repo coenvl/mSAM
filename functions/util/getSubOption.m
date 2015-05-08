@@ -60,6 +60,7 @@ value = getSubStructValue(options, fields);
 
 % Set the default value if it is not found
 if isempty(value)
+    fprintf('Using default value for %s\n', name);
     value = default;
 end
 

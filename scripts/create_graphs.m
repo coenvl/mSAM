@@ -43,7 +43,7 @@ algos = [myalgo; algos(find(~strcmp(algos, myalgo)))];
 % colors = hsv(numel(algos) + 1);
 % colors = gray(numel(algos) + 1);
 colors = cubehelix(numel(algos) + 1, .5, -1.5, 3, 1);
-styles = {'o-', '--', '-.', '-', ':'};
+styles = repmat({'o-', '--', '-.', '-', ':'},1,ceil(numel(algos)/5));
 styles{strcmp(algos, myalgo)} = 'o-';
 
 %% Plot 1 - Solution cost

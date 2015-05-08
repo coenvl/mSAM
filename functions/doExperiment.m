@@ -1,4 +1,4 @@
-function results = doExperiment(options)
+function results = doExperiment(edges, options)
 %#ok<*AGROW>
 
 %% Parse the options
@@ -10,10 +10,7 @@ costFunctionType = getSubOption('nl.coenvl.sam.costfunctions.LocalInequalityCons
     'char', options, 'costFunction');
 maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
 waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
-graphType = getSubOption(@randomGraph, 'function_handle', options, 'graphType');
 
-%% Create problem
-edges = feval(graphType, options.graph);
 nagents = numel(unique(edges));
 
 %% Setup the agents and variables
@@ -26,7 +23,7 @@ for i = 1:nagents
     variable(i) = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
     if strcmp(solverType, 'nl.coenvl.sam.solvers.FBSolver')
         agent(i) = nl.coenvl.sam.agents.OrderedSolverAgent(agentName, variable(i));
-        costfun(i) = feval(costFunctionType, agent(i).getSequenceID());
+        costfun(i) = nl.coenvl.sam.costfunctions.InequalityConstraintCostFunction(agent(i).getSequenceID());
     else
         agent(i) = nl.coenvl.sam.agents.LocalSolverAgent(agentName, variable(i));
         costfun(i) = feval(costFunctionType, agent(i));
@@ -60,11 +57,11 @@ for i = 1:nagents
     end
     
     a = agent(i);
-    c = costfun(i);
+    s = solver(i);
     for v = edges(k,2)'
         if strcmp(solverType, 'nl.coenvl.sam.solvers.FBSolver')
-            c.addConstraintIndex(agent(v).getSequenceID());
-            costfun(v).addConstraintIndex(a.getSequenceID());
+            s.addConstraint(agent(v));
+            solver(v).addConstraint(a);
         else
             a.addToNeighborhood(agent(v));
             agent(v).addToNeighborhood(a);
@@ -94,15 +91,26 @@ elseif isa(a, 'nl.coenvl.sam.solvers.GreedyLocalSolver')
 end
 
 %% Do the iterations
+
 if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
-    for i = 1:nIterations
+    bestSolution = getCost(costfun, variable, agent);
+
+    % Iteratre for AT LEAST nIterations
+    countDown = nIterations;
+    while countDown > 0
+        countDown = countDown - 1;
         for j = 1:nagents
             solver(j).tick();
         end
-        pause(.1);
+        
+        cost = getCost(costfun, variable, agent);
+        % If a better solution is found, reset countDown
+        if cost < bestSolution
+            countDown = nIterations;
+            bestSolution = cost;
+        end
     end
 end
-
 %% Wat for the algorithms to converge
 
 % keyboard
@@ -115,6 +123,24 @@ for t = 1:(maxtime / waittime)
         break
     end
 end
+
+%% Gather results to return
+results.vars.agent = agent;
+results.vars.variable = variable;
+results.vars.solver = solver;
+results.vars.costfun = costfun;
+
+results.cost = getCost(costfun, variable, agent);
+results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
+results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages;
+
+results.graph.density = (2*size(edges,1))/(nagents*(nagents-1));
+results.graph.edges = edges;
+results.graph.nAgents = nagents;
+
+end
+
+function cost = getCost(costfun, variable, agent)
 
 %% Get the results
 if isa(costfun(1), 'nl.coenvl.sam.costfunctions.InequalityConstraintCostFunction')
@@ -144,29 +170,8 @@ for i = 1:numel(costfun)
 %     cost = cost + costfun(i).currentValue();
     cost = cost + costfun(i).evaluate(pc);
 end
-cost = cost / 2 % Since symmetric cost functions
-%%
-% cost = 0;
-% for i = 1:size(e,1)
-%     varA = variable(e(i,1));
-%     varB = variable(e(i,2));
-%     if varA.getValue() == varB.getValue()
-%         cost = cost + 1;
-%     end
-% end
 
-results.vars.agent = agent;
-results.vars.variable = variable;
-results.vars.solver = solver;
-results.vars.costfun = costfun;
-
-results.cost = cost;
-results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages;
-
-results.graph.density = (2*size(edges,1))/(nagents*(nagents-1));
-results.graph.edges = edges;
-results.graph.nAgents = nagents;
+%cost = cost / 2; % Since symmetric cost functions
 
 end
 
