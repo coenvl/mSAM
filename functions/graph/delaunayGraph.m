@@ -6,12 +6,23 @@ function e = delaunayGraph(options)
 % 
 % e = dcg.neqConstraints;
 
-nagents = getSubOption(uint16(10), 'uint16', options, 'nAgents');
+nAgents = getSubOption(uint16(10), 'uint16', options, 'nAgents');
+samplemethod = getSubOption('random', 'char', options, 'sampleMethod');
+
+clear pos;
+switch samplemethod
+    case 'poisson'
+        pos = poissonSample(nAgents);
+    case 'random'
+        pos = rand(nAgents,2);
+    otherwise
+        pos = rand(nAgents,2);
+end
 
 if verLessThan('matlab', '8.4')
-    DT = DelaunayTri(rand(nagents, 1),rand(nagents, 1));    %#ok<DDELTRI>
+    DT = DelaunayTri(pos(:,1),pos(:,2));    %#ok<DDELTRI>
 else
-    DT = delaunayTriangulation(rand(nagents, 1),rand(nagents, 1));
+    DT = delaunayTriangulation(pos(:,1),pos(:,2));
 end
 
 e = DT.edges;
