@@ -1,4 +1,4 @@
-function [ e, pos ] = delaunayGraph(options)
+function [ e, pos ] = delaunayGraph3(options)
 %DCGGRAPH Summary of this function goes here
 %   Detailed explanation goes here
 % 
@@ -12,17 +12,17 @@ samplemethod = getSubOption('random', 'char', options, 'sampleMethod');
 clear pos;
 switch samplemethod
     case 'poisson'
-        pos = poissonSample(nAgents);
+        pos = poissonSample3(nAgents);
     case 'random'
-        pos = rand(nAgents,2);
+        pos = rand(nAgents,3);
     otherwise
-        pos = rand(nAgents,2);
+        pos = rand(nAgents,3);
 end
 
 if verLessThan('matlab', '8.4')
-    DT = DelaunayTri(pos(:,1),pos(:,2));    %#ok<DDELTRI>
+    DT = DelaunayTri(pos(:,1),pos(:,2), pos(:,3));    %#ok<DDELTRI>
 else
-    DT = delaunayTriangulation(pos(:,1),pos(:,2));
+    DT = delaunayTriangulation(pos(:,1),pos(:,2), pos(:,3));
 end
 
 e = DT.edges;

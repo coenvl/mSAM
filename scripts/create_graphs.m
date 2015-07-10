@@ -34,7 +34,7 @@ expname = [outputfolder filesep 'gametheory_exp_e10_trandomSample'];
 format = 'eps';
 printoptions = {'-transparent', '-q105'}; %, 'r600', '-m2'};
 myalgo = 'CoCoA';
-plotfun = @semilogy; %except for cost (always plot)
+plotfun = @plot;%@semilogy; %except for cost (always plot)
 doExport = false;
 
 algos = fieldnames(results);

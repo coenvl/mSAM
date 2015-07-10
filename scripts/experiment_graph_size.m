@@ -1,14 +1,16 @@
 %#ok<*SAGROW>
 superclear
 
-settings.nagents = [5 10 20 40];
-settings.numExps = 10;
+settings.nagents = [5 10 15 20 25 30 35 40];
+settings.numExps = 20;
 
 options.ncolors = uint16(3);
-options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction';
+% options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction';
 % options.costFunction = 'nl.coenvl.sam.costfunctions.LocalGameTheoreticCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
+options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
 options.graphType = @delaunayGraph;
+options.graph.sampleMethod = 'poisson';
+% options.graph.sampleType = 'random';
 % options.graphType = @scalefreeGraph;
 % options.graphType = @randomGraph;
 options.nIterations = uint16(10);
@@ -26,7 +28,7 @@ solvers.SCA2 = 'nl.coenvl.sam.solvers.SCA2Solver';
 
 solvertypes = fieldnames(solvers);
 
-C = strsplit(options.costFunction);
+C = strsplit(options.costFunction, '.');
 expname = sprintf('exp_%s_%s_i%d_c%d_t%s', C{end}, func2str(options.graphType), settings.numExps, options.ncolors, datestr(now,30));
 
 for n = 1:numel(settings.nagents)

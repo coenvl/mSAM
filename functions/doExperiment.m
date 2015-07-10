@@ -10,12 +10,14 @@ costFunctionType = getSubOption('nl.coenvl.sam.costfunctions.LocalInequalityCons
     'char', options, 'costFunction');
 maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
 waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
+agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
 
 nagents = numel(unique(edges));
 
 %% Setup the agents and variables
 nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
+fields = fieldnames(agentProps);
 for i = 1:nagents
     varName = sprintf('variable%05d', i);
     agentName = sprintf('agent%05d', i);
@@ -32,6 +34,20 @@ for i = 1:nagents
     solver(i) = feval(solverType, agent(i), costfun(i));
     
     agent(i).setSolver(solver(i));
+
+    for f = fields'
+        prop = f{:};
+        if numel(agentProps.(prop)) == 1
+            agent(i).set(prop, agentProps.(prop));
+        elseif numel(agentProps.(prop)) == nagents
+            agent(i).set(prop, agentProps.(prop)(i));
+        else
+            error('DOEXPERIMENT:INCORRECTPROPERTYCOUNT', ...
+                'Incorrect number of properties, must be either 1 or number of agents (%d)', ...
+                nagents);
+        end
+    end
+    
     variable(i).clear();
     agent(i).reset();
 end
@@ -134,7 +150,7 @@ results.cost = getCost(costfun, variable, agent);
 results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
 results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages;
 
-results.graph.density = (2*size(edges,1))/(nagents*(nagents-1));
+results.graph.density = graphDensity(edges);
 results.graph.edges = edges;
 results.graph.nAgents = nagents;
 
