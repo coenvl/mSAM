@@ -15,22 +15,27 @@ options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCos
 % options.solverType = 'nl.coenvl.sam.solvers.GreedyCooperativeSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.GreedyLocalSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.TickCFLSolver';
-options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MGMSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.SCA2Solver';
-% options.solverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+options.solverType = 'nl.coenvl.sam.solvers.MGM2Solver';
 
-options.graph.nAgents = uint16(15);
-options.graphType = @delaunayGraph;
+options.graph.nAgents = uint16(20);
+% options.graphType = @delaunayGraph;
 % options.graphType = @scalefreeGraph;
-% options.graphType = @randomGraph;
-% options.graph.density = .1;
+options.graphType = @randomGraph;
+options.graph.density = .2;
 
-options.nIterations = uint16(100);
+options.nIterations = uint16(60);
+options.keepCostGraph = true;
 
 % Do the experiment
 edges = feval(options.graphType, options.graph);
 experimentResult = doExperiment(edges, options);
+
+plot(experimentResult.allcost)
+% line([0 numel(experimentResult.allcost)], [experimentResult.cost experimentResult.cost]);
+shg
 
 %% Show results
 fprintf('\nExperiment results:\n');
@@ -43,7 +48,7 @@ fprintf('\tGraph type: %s\n', func2str(options.graphType));
 fprintf('\t\t- size: %d\n', experimentResult.graph.nAgents);
 fprintf('\t\t- density: %1.5f\n', experimentResult.graph.density);
 
-% return
+return
 %% The rest makes a nice graph, which is not required
 
 fid = fopen('test.gv', 'w');

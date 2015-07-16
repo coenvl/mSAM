@@ -1,12 +1,12 @@
 superclear
 
 settings.nagents = [50 100 150 200 250];
-settings.numExps = 10;
+settings.numExps = 1;
 
 solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 solvers.CoCoA = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
 solvers.Greedy = 'nl.coenvl.sam.solvers.GreedyLocalSolver';
-% solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
+solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
 % solvers.AFB = 'nl.coenvl.sam.solvers.FBSolver';
 % solvers.CFL = 'nl.coenvl.sam.solvers.TickCFLSolver';
 
@@ -19,9 +19,10 @@ options.graph.sampleMethod = 'random';
 options.graph.maxDist = 90;
 options.graph.scale = 200;
 
-options.nIterations = uint16(22);
+options.nIterations = uint16(25);
 options.maxTime = 120;
 options.waitTime = 15;
+options.keepCostGraph = false;
 
 solvertypes = fieldnames(solvers);
 

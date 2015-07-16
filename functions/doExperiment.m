@@ -11,8 +11,9 @@ costFunctionType = getSubOption('nl.coenvl.sam.costfunctions.LocalInequalityCons
 maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
 waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
 agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
+keepCostGraph = getSubOption(false, 'logical', options, 'keepCostGraph');
 
-nagents = numel(unique(edges));
+nagents = graphSize(edges);
 
 %% Setup the agents and variables
 nl.coenvl.sam.ExperimentControl.ResetExperiment();
@@ -111,6 +112,8 @@ end
 if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
     bestSolution = getCost(costfun, variable, agent);
 
+    if keepCostGraph; costList = bestSolution; end
+    
     % Iteratre for AT LEAST nIterations
     countDown = nIterations;
     while countDown > 0
@@ -120,6 +123,8 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         end
         
         cost = getCost(costfun, variable, agent);
+        if keepCostGraph; costList = [costList cost]; end
+        
         % If a better solution is found, reset countDown
         if cost < bestSolution
             countDown = nIterations;
@@ -146,7 +151,12 @@ results.vars.variable = variable;
 results.vars.solver = solver;
 results.vars.costfun = costfun;
 
-results.cost = getCost(costfun, variable, agent);
+if keepCostGraph; results.allcost = costList; end
+if exist('bestsolution', 'var')
+    results.cost = bestSolution;
+else
+    results.cost = getCost(costfun, variable, agent);
+end
 results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
 results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages;
 
