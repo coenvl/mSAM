@@ -1,7 +1,7 @@
 superclear
 
 settings.nagents = [50 100 150 200 250];
-settings.numExps = 1;
+settings.numExps = 10;
 
 solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 solvers.CoCoA = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
@@ -16,8 +16,8 @@ options.graphType = @distanceGraph3;
 
 % options.graph.sampleMethod = 'poisson';
 options.graph.sampleMethod = 'random';
-options.graph.maxDist = 90;
-options.graph.scale = 200;
+options.graph.maxDist = 30;
+options.graph.scale = 50;
 
 options.nIterations = uint16(25);
 options.maxTime = 120;
@@ -61,7 +61,7 @@ for n = 1:numel(settings.nagents)
     end
 end
 
-% save(fullfile('data', sprintf('%s_results.mat', expname)), 'settings', 'solvers', 'results');
+save(fullfile('data', sprintf('%s_results.mat', expname)), 'settings', 'solvers', 'results');
 
 %%
 

@@ -40,7 +40,7 @@ for i = 1:nagents
         prop = f{:};
         if numel(agentProps.(prop)) == 1
             agent(i).set(prop, agentProps.(prop));
-        elseif numel(agentProps.(prop)) == nagents
+        elseif numel(agentProps.(prop)) >= nagents
             agent(i).set(prop, agentProps.(prop)(i));
         else
             error('DOEXPERIMENT:INCORRECTPROPERTYCOUNT', ...
@@ -74,11 +74,13 @@ for i = 1:nagents
     end
     
     a = agent(i);
-    s = solver(i);
+    %s = solver(i);
     for v = edges(k,2)'
         if strcmp(solverType, 'nl.coenvl.sam.solvers.FBSolver')
-            s.addConstraint(agent(v));
-            solver(v).addConstraint(a);
+            costfun(i).addConstraintIndex(agent(v).getSequenceID());
+            costfun(v).addConstraintIndex(agent(i).getSequenceID());
+            %s.addConstraint(agent(v));
+            %solver(v).addConstraint(a);
         else
             a.addToNeighborhood(agent(v));
             agent(v).addToNeighborhood(a);
@@ -172,21 +174,25 @@ function cost = getCost(costfun, variable, agent)
 if isa(costfun(1), 'nl.coenvl.sam.costfunctions.InequalityConstraintCostFunction')
     pc = nl.coenvl.sam.problemcontexts.IndexedProblemContext(-1);
     for i = 1:numel(variable)
-        v = variable(i).getValue();
-        if isa(v, 'double')
-            pc.setValue(i-1, java.lang.Integer(v));
-        else
-            pc.setValue(i-1, v);
+        if (variable(i).isSet())
+            v = variable(i).getValue();
+            if isa(v, 'double')
+                pc.setValue(i-1, java.lang.Integer(v));
+            else
+                pc.setValue(i-1, v);
+            end
         end
     end
 else
     pc = nl.coenvl.sam.problemcontexts.LocalProblemContext(agent(1));
     for i = 1:numel(variable)
-        v = variable(i).getValue();
-        if isa(v, 'double')
-            pc.setValue(agent(i), java.lang.Integer(v));
-        else
-            pc.setValue(agent(i), v);
+        if (variable(i).isSet())
+            v = variable(i).getValue();
+            if isa(v, 'double')
+                pc.setValue(agent(i), java.lang.Integer(v));
+            else
+                pc.setValue(agent(i), v);
+            end
         end
     end
 end

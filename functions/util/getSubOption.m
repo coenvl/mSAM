@@ -65,9 +65,11 @@ if isempty(value)
 end
 
 % Optionally check the value type
-if ~isempty(type)
-    assert(isa(value, type), 'Option %s of invalid type %s (%s expected)', ...
+if ~isempty(type) && ~isa(value, type)
+    err = MException('GETSUBOPTION:INVALIDTYPE', ...
+        'Option %s of invalid type %s (%s expected)', ...
         name, class(value), type);
+    err.throwAsCaller();
 end
 
 end

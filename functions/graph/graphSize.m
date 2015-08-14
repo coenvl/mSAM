@@ -14,4 +14,5 @@
 %% Function Definition
 function [ size ] = graphSize( edges )
 
-size = numel(unique(edges(:)));
+%size = numel(unique(edges(:)));
+size = max(max(edges));

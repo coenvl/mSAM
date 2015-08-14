@@ -15,27 +15,27 @@ options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCos
 % options.solverType = 'nl.coenvl.sam.solvers.GreedyCooperativeSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.GreedyLocalSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.TickCFLSolver';
-% options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
+options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MGMSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.SCA2Solver';
-options.solverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+% options.solverType = 'nl.coenvl.sam.solvers.MGM2Solver';
 
-options.graph.nAgents = uint16(20);
+options.graph.nAgents = uint16(10);
 % options.graphType = @delaunayGraph;
 % options.graphType = @scalefreeGraph;
 options.graphType = @randomGraph;
 options.graph.density = .2;
 
 options.nIterations = uint16(60);
-options.keepCostGraph = true;
+options.keepCostGraph = false;
 
 % Do the experiment
 edges = feval(options.graphType, options.graph);
 experimentResult = doExperiment(edges, options);
 
-plot(experimentResult.allcost)
+% plot(experimentResult.allcost)
 % line([0 numel(experimentResult.allcost)], [experimentResult.cost experimentResult.cost]);
-shg
+% shg
 
 %% Show results
 fprintf('\nExperiment results:\n');

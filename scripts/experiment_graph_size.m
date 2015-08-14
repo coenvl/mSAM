@@ -1,28 +1,31 @@
 %#ok<*SAGROW>
 superclear
 
-settings.nagents = [5 10 15 20 25 30 35 40];
-settings.numExps = 20;
+settings.nagents = [50 100 150 200 250]; %[5 10 15 20 25];
+settings.numExps = 10;
 
 options.ncolors = uint16(3);
 % options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.LocalGameTheoreticCostFunction';
-options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
-options.graphType = @delaunayGraph;
-options.graph.sampleMethod = 'poisson';
-% options.graph.sampleType = 'random';
+options.costFunction = 'nl.coenvl.sam.costfunctions.LocalGameTheoreticCostFunction';
+% options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
+
 % options.graphType = @scalefreeGraph;
 % options.graphType = @randomGraph;
-options.nIterations = uint16(10);
+options.graphType = @delaunayGraph;
+options.graph.sampleMethod = 'poisson';
+% options.graph.sampleMethod = 'random';
+options.keepCostGraph = false;
+
+options.nIterations = uint16(25);
 options.maxTime = 120;
-options.waitTime = 1;
+options.waitTime = 15;
 
 solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 solvers.CoCoA = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
 solvers.Greedy = 'nl.coenvl.sam.solvers.GreedyLocalSolver';
-solvers.MGM = 'nl.coenvl.sam.solvers.MGMSolver';
+% solvers.MGM = 'nl.coenvl.sam.solvers.MGMSolver';
 solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
-solvers.SCA2 = 'nl.coenvl.sam.solvers.SCA2Solver';
+% solvers.SCA2 = 'nl.coenvl.sam.solvers.SCA2Solver';
 % solvers.AFB = 'nl.coenvl.sam.solvers.FBSolver';
 % solvers.CFL = 'nl.coenvl.sam.solvers.TickCFLSolver';
 
@@ -59,4 +62,4 @@ end
 
 save(fullfile('data', sprintf('%s_results.mat', expname)), 'settings', 'solvers', 'results');
 
-create_graphs;
+% create_graphs;

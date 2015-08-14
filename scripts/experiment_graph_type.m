@@ -41,7 +41,7 @@ for n = 1:numel(graphTypes)
         
         numNodes = numel(unique(edges(:)));
         graphs.(graphName).size(e) = numNodes;
-        graphs.(graphName).density(e) = (2*size(edges,1))/(numNodes*(numNodes-1));
+        graphs.(graphName).density(e) = graphSize(edges);
 
         for a = 1:numel(solvertypes)
             solvername = solvertypes{a};
