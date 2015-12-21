@@ -16,7 +16,7 @@ options.ncolors = uint16(4);
 options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
 options.graphType = @randomGraph;
 
-options.nIterations = uint16(25);
+options.nStableIterations = uint16(25);
 options.maxTime = 120;
 options.waitTime = 15;
 options.keepCostGraph = false;

@@ -20,7 +20,7 @@ options.graph.sampleMethod = 'random';
 % options.graph.density = 0.2;
 
 options.keepCostGraph = false;
-options.nIterations = uint16(25);
+options.nStableIterations = uint16(25);
 options.maxTime = 120;
 options.waitTime = 15;
 

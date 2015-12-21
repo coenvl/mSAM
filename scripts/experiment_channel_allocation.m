@@ -19,7 +19,7 @@ options.graph.sampleMethod = 'random';
 options.graph.maxDist = 30;
 options.graph.scale = 50;
 
-options.nIterations = uint16(25);
+options.nStableIterations = uint16(25);
 options.maxTime = 120;
 options.waitTime = 15;
 options.keepCostGraph = false;

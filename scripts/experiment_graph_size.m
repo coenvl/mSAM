@@ -1,7 +1,7 @@
 %#ok<*SAGROW>
 superclear
 
-settings.nagents = [50 100 150 200 250]; %[5 10 15 20 25];
+settings.nagents = [5 10 15 20 25]; % [50 100 150 200 250]; %
 settings.numExps = 10;
 
 options.ncolors = uint16(3);
@@ -16,9 +16,9 @@ options.graph.sampleMethod = 'poisson';
 % options.graph.sampleMethod = 'random';
 options.keepCostGraph = false;
 
-options.nIterations = uint16(25);
+options.nStableIterations = uint16(25);
 options.maxTime = 120;
-options.waitTime = 15;
+options.waitTime = 1;
 
 solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 solvers.CoCoA = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
@@ -28,6 +28,8 @@ solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
 % solvers.SCA2 = 'nl.coenvl.sam.solvers.SCA2Solver';
 % solvers.AFB = 'nl.coenvl.sam.solvers.FBSolver';
 % solvers.CFL = 'nl.coenvl.sam.solvers.TickCFLSolver';
+solvers.ACLS = 'nl.coenvl.sam.solvers.ACLSSolver';
+solvers.MCSMGM = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 
 solvertypes = fieldnames(solvers);
 
@@ -58,8 +60,19 @@ for n = 1:numel(settings.nagents)
     end
 end
 
+%% Create graph
+
+options = getGraphOptions();
+options.axes.yscale = 'linear'; % True for most situations
+options.export.do = false;
+options.label.Y = 'Solution cost';
+options.plot.hi_error_fun = @(x)x + 1;
+options.plot.low_error_fun = @(x)x - 1;
+createResultGraph(results, settings, 'costs', options);
+
 %% Save results
 
 save(fullfile('data', sprintf('%s_results.mat', expname)), 'settings', 'solvers', 'results');
 
 % create_graphs;
+

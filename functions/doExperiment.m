@@ -3,7 +3,8 @@ function results = doExperiment(edges, options)
 
 %% Parse the options
 nColors = getSubOption(uint16(3), 'uint16', options, 'ncolors');
-nIterations = getSubOption(uint16(10), 'uint16', options, 'nIterations');
+nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIterations');
+nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
 solverType = getSubOption('nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver', ...
     'char', options, 'solverType');
 costFunctionType = getSubOption('nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction', ...
@@ -116,10 +117,12 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
 
     if keepCostGraph; costList = bestSolution; end
     
-    % Iteratre for AT LEAST nIterations
-    countDown = nIterations;
-    while countDown > 0
+    % Iteratre for AT LEAST nStableIterations
+    numIters = 1;
+    countDown = nStableIterations;
+    while any(numIters < nMaxIterations) || any(countDown > 0)       
         countDown = countDown - 1;
+        numIters = numIters + 1;
         for j = 1:nagents
             solver(j).tick();
         end
@@ -129,7 +132,7 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         
         % If a better solution is found, reset countDown
         if cost < bestSolution
-            countDown = nIterations;
+            countDown = nStableIterations;
             bestSolution = cost;
         end
     end
@@ -153,12 +156,18 @@ results.vars.variable = variable;
 results.vars.solver = solver;
 results.vars.costfun = costfun;
 
-if keepCostGraph; results.allcost = costList; end
-if exist('bestsolution', 'var')
+if exist('bestSolution', 'var')
     results.cost = bestSolution;
 else
     results.cost = getCost(costfun, variable, agent);
 end
+
+if keepCostGraph && exist('costList', 'var')
+    results.allcost = costList; 
+else
+    results.allcost = results.cost;
+end
+
 results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
 results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages;
 

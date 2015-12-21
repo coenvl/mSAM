@@ -18,10 +18,14 @@ function [ output_args ] = createResultGraph(results, settings, y_field, plotOpt
 if isfield(settings, 'density') && numel(settings.density) > 1
     x = settings.density;
     default_x_label = 'Graph density';
+elseif isfield(settings, 'nMaxIterations')
+    x = 1:settings.nMaxIterations;
+    default_x_label = 'Iterations';
 else
     x = settings.nagents;
     default_x_label = 'Graph size';
 end
+
 
 %% Get the different algorithms from the results
 algos = fieldnames(results);
@@ -42,9 +46,10 @@ figunits = getSubOption('centimeters', 'char', plotOptions, 'figure', 'units');
 
 % y_field = getSubOption('costs', 'char', plotOptions, 'plot', 'y_field');
 styles = getSubOption(default_styles, 'cell', plotOptions, 'plot', 'styles');
-colors = getSubOption(hsv(numel(algos)), 'double', plotOptions, 'plot', 'colors');
+colors = getSubOption(cubehelix(numel(algos) + 1, .5, -1.5, 3, 1), 'double', plotOptions, 'plot', 'colors');
 yfun = getSubOption(@(x) mean(x,2), 'function_handle', plotOptions, 'plot', 'y_fun');
 linewidth = getSubOption(2, 'double', plotOptions, 'plot', 'linewidth');
+do_errorbar = getSubOption(true, 'logical', plotOptions, 'plot', 'errorbar');
 
 % How to plot the error bar
 lo_fun = getSubOption(@(x) std(x,[],2), 'function_handle', plotOptions, 'plot', 'low_error_fun');
@@ -55,6 +60,7 @@ legendfont = getSubOption('times', 'char', plotOptions, 'legend', 'font');
 legendsize = getSubOption(14, 'double', plotOptions, 'legend', 'fontsize');
 legendlinewidth = getSubOption(1, 'double', plotOptions, 'legend', 'linewidth');
 legendbox = getSubOption('off', 'char', plotOptions, 'legend', 'box');
+legendloc = getSubOption('NorthWest', 'char', plotOptions, 'legend', 'location');
 
 axesfont = getSubOption('times', 'char', plotOptions, 'axes', 'font');
 axessize = getSubOption(14, 'double', plotOptions, 'axes', 'fontsize');
@@ -66,6 +72,7 @@ minorgrid = getSubOption('off', 'char', plotOptions, 'axes', 'minorgrid');
 minortick = getSubOption('on', 'char', plotOptions, 'axes', 'minortick');
 
 yscale = getSubOption('linear', 'char', plotOptions, 'axes', 'yscale');
+yminval = getSubOption([], 'double', plotOptions, 'axes', 'ymin');
 
 labelfont = getSubOption('times', 'char', plotOptions, 'label', 'font');
 labelsize = getSubOption(16, 'double', plotOptions, 'label', 'fontsize');
@@ -78,28 +85,46 @@ outputfolder = getSubOption(pwd, 'char', plotOptions, 'export', 'folder');
 expname = getSubOption('experiment', 'char', plotOptions, 'export', 'name');
 format = getSubOption('eps', 'char', plotOptions, 'export', 'format');
 
+%%
+if ~exist(outputfolder, 'dir')
+    mkdir(outputfolder);
+end
+
 %% Make the plot
 fig = figure(fignum);
 clf(fig);
-set(fig, 'Units', figunits, 'Position', [10 10 figwidth figheight], ...
+set(fig, 'Units', figunits, 'Position', [3 3 figwidth figheight], ...
     'name', sprintf('%s for %s experiment', y_label, expname));
 
 ax = cla;
 hold(ax, 'on');
 
 for i = 1:numel(algos)
-    d = results.(algos{i}).(y_field);
-    plot(ax, x, yfun(d), styles{mod(i-1, numel(styles))+1}, ...
+    y = yfun(results.(algos{i}).(y_field));
+    
+    if size(y,1) == 1
+        if size(y,2) == numel(x)
+            error('Expected a data in columns, not rows');
+        else
+            y = repmat(y,numel(x),1);
+        end
+    end
+    
+    plot(ax, x, yfun(y), styles{mod(i-1, numel(styles))+1}, ...
         'linewidth', linewidth, 'color', colors(mod(i-1, size(colors,1))+1,:));
 end
 hl = legend(ax, algos{:}, 'Location', 'NorthWest');
 
-ymax = 0;
-for i = 1:numel(algos)
-    d = results.(algos{i}).(y_field);
-    addErrorBar(ax, x, yfun(d), lo_fun(d), hi_fun(d), ...
-        'linewidth', errorlinewidth, 'color', colors(mod(i-1, size(colors,1))+1,:));
-    ymax = max([ymax; hi_fun(d)]);
+ymax = max(get(ax, 'YLim'));
+if isempty(yminval); yminval = min(get(ax, 'YLim')); end
+
+if (do_errorbar)
+    for i = 1:numel(algos)
+        d = results.(algos{i}).(y_field);
+        addErrorBar(ax, x, yfun(d), lo_fun(d), hi_fun(d), ...
+            'linewidth', errorlinewidth, 'color', colors(mod(i-1, size(colors,1))+1,:));
+        ymax = max([ymax; hi_fun(d)]);
+    end
 end
 
 %% calculate where the ticks should go
@@ -118,13 +143,13 @@ else
 end
 
 set(hl, 'fontsize', legendsize, 'fontname', legendfont, 'linewidth', ...
-    legendlinewidth, 'Box', legendbox);
+    legendlinewidth, 'Box', legendbox, 'Location', legendloc);
 set(ax, 'fontsize', axessize, 'fontname', axesfont, 'linewidth', axeslinewidth, ...
     'YMinorGrid', minorgrid, 'YMinorTick', minortick, ...
     'XMinorGrid', minorgrid, 'XMinorTick', minortick, ...
     'Box', axesbox, 'YGrid', axesgrid, 'XGrid', axesgrid, ...
     'XLim', [min(x) max(x)], 'YScale', yscale,  ...
-    'YLim', [0 ymax], 'YTick', ytick); %max(get(ax, 'YLim'))]);
+    'YLim', [yminval ymax]);%, 'YTick', ytick); %max(get(ax, 'YLim'))]);
 
 % ht = title('Solution cost', 'fontsize', titlesize, 'fontname', font, 'fontweight', titleweight);
 xlabel(ax, x_label, 'fontsize', labelsize, 'fontname', labelfont);
