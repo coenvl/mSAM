@@ -1,105 +1,71 @@
-%#ok<*FNDSB>
-
 %% Get Default options
 options = getGraphOptions();
-options.axes.yscale = 'linear'; % True for most situations
+options.plot.colors = cubehelix(7, .5, -1.5, 3, 1);
 options.export.do = true;
+options.export.format = 'eps';
+options.export.folder = 'C:\Data\Documents\PHD\ijcai2016\images';
+options.plot.errorbar = false;
+% options.plot.hi_error_fun = @(x) nanmean(x,2) + nanstd(x, [], 2);
+% options.plot.lo_error_fun = @(x) nanmean(x,2) - nanstd(x, [], 2);
+options.plot.emphasize = 'CoCoA';
+% options.plot.styles = {':', '-', '--', '-.', '-', '--'};
+options.label.Y = 'Solution cost';
 
-%% Channel Allocation experiment
-load data\exp_channel_alloc_distanceGraph3_11_20150717T093411_i10_results.mat
-options.export.name = 'channel_alloc';
+%% Graph coloring experiment
+exp(1) = load('C:\Develop\matlab\CoCoA\data\exp_LocalInequalityConstraintCostFunction_delaunayGraph_i100_d3_n200_t20160127T165702_results.mat');
+options.export.name = 'graph_coloring';
 
-% Costs
+% Convert from cells to matrix
+exp(1).settings.nMaxIterations = 70;
+options.plot.range = 1:exp(1).settings.nMaxIterations;
+resultsMat = prepareResults(exp(1).results, options.plot.range);
+resultsMat = rmfield(resultsMat, 'MaxSumADVP');
+
+% Create figure
 options.figure.number = 187;
-options.label.Y = 'Solution cost';
-createResultGraph(results, settings, 'costs', options);
+createResultGraph(resultsMat, exp(1).settings, 'costs', options);
 
-% Messages
+% Get results from best 1%
+% analyzeResults(exp(1).results);
+
+%% Game theory experiment
+exp(2) = load('C:\Develop\matlab\CoCoA\data\exp_LocalGameTheoreticCostFunction_delaunayGraph_i100_d3_n200_t20160126T151322_results.mat');
+options.export.name = 'game_theory';
+
+% Convert from cells to matrix
+exp(2).settings.nMaxIterations = 100;
+options.plot.range = 1:exp(2).settings.nMaxIterations;
+resultsMat = prepareResults(exp(2).results, options.plot.range);
+
+% Create figure
 options.figure.number = 188;
-options.label.Y = 'Messages transmitted';
-createResultGraph(results, settings, 'msgs', options);
+createResultGraph(resultsMat, exp(2).settings, 'costs', options);
 
-% Evaluations
+% Get results from best 1%
+% analyzeResults(exp(2).results);
+
+%% Semi random experiments
+exp(3) = load('C:\Develop\matlab\CoCoA\data\exp_SemiRandomCostFunction_scalefreeGraph_i100_d10_n200_t20160125T075348_results.mat');
+options.export.name = 'semi_random';
+
+% Convert from cells to matrix
+exp(3).settings.nMaxIterations = 800;
+options.plot.range = 1:exp(3).settings.nMaxIterations;
+resultsMat = prepareResults(exp(3).results, options.plot.range);
+
+% Create figure
 options.figure.number = 189;
-options.label.Y = 'Costfun. evaluations';
-createResultGraph(results, settings, 'evals', options);
+createResultGraph(resultsMat, exp(3).settings, 'costs', options);
 
-%% Random Graph experiment
-load data\exp_density_randomGraph_4_20150717T102628_i10_results.mat
-options.export.name = 'density';
+% Get results from best 1%
+% analyzeResults(exp(3).results);
 
-% Costs
-options.figure.number = 190;
-options.label.Y = 'Solution cost';
-createResultGraph(results, settings, 'costs', options);
+miniexp = load('C:\Develop\matlab\CoCoA\data\exp_SemiRandomCostFunction_scalefreeGraph_i100_d10_n200_t20160129T161432_partial_results.mat');
+% exp(3)
+exp(3).results.MaxSumADVP = miniexp.results.MaxSumADVP;
+%% Create result table
 
-% Messages
-options.figure.number = 191;
-options.label.Y = 'Messages transmitted';
-createResultGraph(results, settings, 'msgs', options);
+str = createResultTable(exp);
+% clipboard('copy', str)
+disp(str);
 
-% Evaluations
-options.figure.number = 192;
-options.label.Y = 'Costfun. evaluations';
-createResultGraph(results, settings, 'evals', options);
-
-%% Game Theory experiment
-load data\exp_LocalGameTheoreticCostFunction_delaunayGraph_i10_c3_t20150717T142129_results.mat
-options.export.name = 'gametheory';
-
-% Costs
-options.figure.number = 193;
-options.label.Y = 'Solution cost';
-createResultGraph(results, settings, 'costs', options);
-
-% Messages
-options.figure.number = 194;
-options.label.Y = 'Messages transmitted';
-createResultGraph(results, settings, 'msgs', options);
-
-% Evaluations
-options.figure.number = 195;
-options.label.Y = 'Costfun. evaluations';
-createResultGraph(results, settings, 'evals', options);
-
-%% Graph Coloring experiment
-load data\exp_LocalInequalityConstraintCostFunction_delaunayGraph_i10_c3_t20150717T141847_results.mat
-options.export.name = 'coloring';
-
-% Costs
-options.figure.number = 196;
-options.label.Y = 'Solution cost';
-createResultGraph(results, settings, 'costs', options);
-
-% Messages
-options.figure.number = 197;
-options.axes.yscale = 'log';
-options.label.Y = 'Messages transmitted';
-createResultGraph(results, settings, 'msgs', options);
-
-% Evaluations
-options.figure.number = 198;
-options.label.Y = 'Costfun. evaluations';
-createResultGraph(results, settings, 'evals', options);
-
-% Reset yscale setting
-options.axes.yscale = 'linear';
-
-%% Task Scheduling experiment
-load data\exp_task_scheduling_randomGraph_5_20150716T131749_i10_results.mat
-options.export.name = 'task_scheduling';
-
-% Costs
-options.figure.number = 199;
-options.label.Y = 'Solution cost';
-createResultGraph(results, settings, 'costs', options);
-
-% Messages
-options.figure.number = 200;
-options.label.Y = 'Messages transmitted';
-createResultGraph(results, settings, 'msgs', options);
-
-% Evaluations
-options.figure.number = 201;
-options.label.Y = 'Costfun. evaluations';
-createResultGraph(results, settings, 'evals', options);

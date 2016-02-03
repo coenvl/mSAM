@@ -12,7 +12,7 @@
 %
 
 %% Function Definition
-function [ output_args ] = createResultGraph(results, settings, y_field, plotOptions)
+function [varargout] = createResultGraph(results, settings, y_field, plotOptions)
 
 %% Get what should be on the X axis
 if isfield(settings, 'density') && numel(settings.density) > 1
@@ -28,13 +28,14 @@ end
 
 
 %% Get the different algorithms from the results
-algos = fieldnames(results);
+algos = sort(fieldnames(results));
 myalgo = getSubOption('', 'char', plotOptions, 'plot', 'emphasize');
+
+% Set default style
+default_styles = repmat({'-', '--', '-.', ':'},1,ceil(numel(algos)/4));
 if ~isempty(myalgo)
     algos = [myalgo; algos(~strcmp(algos, myalgo))];
-    default_styles = repmat({'o-', '--', '-.', '-', ':'},1,ceil(numel(algos)/5));
-else
-    default_styles = repmat({'-', '--', '-.', ':'},1,ceil(numel(algos)/4));
+%     default_styles = [{'o-'} default_styles];
 end
 
 %% Go through the options to get the layout etc.
@@ -45,6 +46,7 @@ figheight = getSubOption(15, 'double', plotOptions, 'figure', 'height');
 figunits = getSubOption('centimeters', 'char', plotOptions, 'figure', 'units');
 
 % y_field = getSubOption('costs', 'char', plotOptions, 'plot', 'y_field');
+plotRange = getSubOption([], 'double', plotOptions, 'plot', 'range');
 styles = getSubOption(default_styles, 'cell', plotOptions, 'plot', 'styles');
 colors = getSubOption(cubehelix(numel(algos) + 1, .5, -1.5, 3, 1), 'double', plotOptions, 'plot', 'colors');
 yfun = getSubOption(@(x) mean(x,2), 'function_handle', plotOptions, 'plot', 'y_fun');
@@ -52,8 +54,8 @@ linewidth = getSubOption(2, 'double', plotOptions, 'plot', 'linewidth');
 do_errorbar = getSubOption(true, 'logical', plotOptions, 'plot', 'errorbar');
 
 % How to plot the error bar
-lo_fun = getSubOption(@(x) std(x,[],2), 'function_handle', plotOptions, 'plot', 'low_error_fun');
-hi_fun = getSubOption(@(x) std(x,[],2), 'function_handle', plotOptions, 'plot', 'hi_error_fun');
+lo_fun = getSubOption(@(x) mean(x,2) - std(x,[],2), 'function_handle', plotOptions, 'plot', 'low_error_fun');
+hi_fun = getSubOption(@(x) mean(x,2) + std(x,[],2), 'function_handle', plotOptions, 'plot', 'hi_error_fun');
 errorlinewidth = getSubOption(0.5, 'double', plotOptions, 'plot', 'errorlinewidth');
 
 legendfont = getSubOption('times', 'char', plotOptions, 'legend', 'font');
@@ -101,7 +103,7 @@ hold(ax, 'on');
 
 for i = 1:numel(algos)
     y = yfun(results.(algos{i}).(y_field));
-    
+       
     if size(y,1) == 1
         if size(y,2) == numel(x)
             error('Expected a data in columns, not rows');
@@ -110,8 +112,15 @@ for i = 1:numel(algos)
         end
     end
     
-    plot(ax, x, yfun(y), styles{mod(i-1, numel(styles))+1}, ...
-        'linewidth', linewidth, 'color', colors(mod(i-1, size(colors,1))+1,:));
+    if ~isempty(plotRange)
+        x = x(plotRange);
+        y = y(plotRange);
+    end
+    
+    lw = linewidth;
+    if strcmp(algos{i}, myalgo); lw = 1.5 * lw; end
+    plot(ax, x, y, styles{mod(i-1, numel(styles))+1}, ...
+        'linewidth', lw, 'color', colors(mod(i-1, size(colors,1))+1,:));
 end
 hl = legend(ax, algos{:}, 'Location', 'NorthWest');
 
@@ -121,6 +130,7 @@ if isempty(yminval); yminval = min(get(ax, 'YLim')); end
 if (do_errorbar)
     for i = 1:numel(algos)
         d = results.(algos{i}).(y_field);
+                
         addErrorBar(ax, x, yfun(d), lo_fun(d), hi_fun(d), ...
             'linewidth', errorlinewidth, 'color', colors(mod(i-1, size(colors,1))+1,:));
         ymax = max([ymax; hi_fun(d)]);
@@ -151,12 +161,19 @@ set(ax, 'fontsize', axessize, 'fontname', axesfont, 'linewidth', axeslinewidth, 
     'XLim', [min(x) max(x)], 'YScale', yscale,  ...
     'YLim', [yminval ymax]);%, 'YTick', ytick); %max(get(ax, 'YLim'))]);
 
+yax = get(ax, 'YAxis');
+set(yax, 'Exponent', floor(log10(ymax)));
+
 % ht = title('Solution cost', 'fontsize', titlesize, 'fontname', font, 'fontweight', titleweight);
 xlabel(ax, x_label, 'fontsize', labelsize, 'fontname', labelfont);
 ylabel(ax, y_label, 'fontsize', labelsize, 'fontname', labelfont);
 
 if doExport 
-    export_fig(fig, fullfile(outputfolder, sprintf('%s_%s.%s', expname, y_field, format)), printoptions{:}); 
+    filename = fullfile(outputfolder, sprintf('%s_%s.%s', expname, y_field, format));
+    export_fig(fig, filename, printoptions{:}); 
+    if nargout > 0
+        varargout{1} = filename;
+    end
 end
 
 end
