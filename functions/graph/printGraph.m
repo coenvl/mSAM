@@ -37,9 +37,27 @@ end
 fprintf(fid, '}\n');
 fclose(fid);
 
-graphvizpath = 'c:/Progra~2/Graphviz/bin';
+graphvizpath = getGraphvizLoc();
 
 layout = fullfile(graphvizpath, 'sfdp.exe');
 % layout = fullfile(graphvizpath, 'twopi.exe');
 
 system(sprintf('%s %s -T png -o %s', layout, gvfile, filename));
+
+function loc = getGraphvizLoc()
+
+loc = getenv('path_graphviz');
+if ~isempty(loc), return; end
+
+if ispc()
+    for bp = {'C:/Progra~1', 'C:/Progra~2'}
+        a = dir(fullfile(bp{:}, 'Graphviz*'));
+        if ~isempty(a) && exist(fullfile(bp{:}, a.name, 'bin', 'gvedit.exe'), 'file');
+            loc = fullfile(bp{:}, a.name, 'bin');
+            setenv('path_graphviz', loc);
+            return;
+        end
+    end
+end
+
+error('Could not automatically find Graphviz location, please set the environment variables ''path_graphviz''');

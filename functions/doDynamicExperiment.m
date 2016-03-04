@@ -1,4 +1,4 @@
-function results = doExperiment(edges, options)
+function results = doDynamicExperiment(edges, options)
 %#ok<*AGROW>
 
 %% Parse the options
@@ -119,7 +119,6 @@ else
 end
 
 %% Init all agents
-t_experiment_start = tic; % start the clock here
 for i = nagents:-1:1
     agent(i).init();
     pause(.01);
@@ -143,20 +142,13 @@ end
 %% Do the iterations
 numIters = 0;
 if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
-    %bestSolution = getCost(costfun, variable, agent);
-    bestSolution = inf;
     
-    if keepCostGraph; 
-        costList = []; %bestSolution;
-        evalList = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-        msgList = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
-        timeList = toc(t_experiment_start);
-    end
+    costList = [];
+    evalList = [];
+    msgList = [];
     
-    % Iterate for AT LEAST nStableIterations
-    countDown = nStableIterations;
-    while ~doStop(numIters, nMaxIterations, countDown, nStableIterations)       
-        countDown = countDown - 1;
+    % Iterate for nMaxIterations
+    while numIters < nMaxIterations
         numIters = numIters + 1;
         for j = 1:nagents
             solver(j).tick();
@@ -169,32 +161,45 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         end
             
         cost = getCost(costFunctionType, variable, agent, edges);
-        if keepCostGraph; 
-            costList(numIters) = cost;
-            evalList(numIters) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-            msgList(numIters) = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
-            timeList(numIters) = toc(t_experiment_start);
-        end
-        
-        % If a better solution is found, reset countDown
-        if cost < bestSolution
-            countDown = nStableIterations;
-            bestSolution = cost;
-        end
+        costList(numIters) = cost;
+        evalList(numIters) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
+        msgList(numIters) = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
+    end
+    
+    % Do something random
+    switch randi(7)
+        case 1
+            % Add constraint
+        case 2
+            % Remove constraint
+        case 3
+            % Add agent
+        case 4
+            % Remove agent
+        case 5
+            % Increase domain
+        case 6
+            % Decrease domain
+        case 7
+            % Change cost matrix
+        otherwise
+            error('Impossibru!')
     end
 end
 %% Wat for the algorithms to converge
 
-% This loop does not really work for algorithms that run iteratively
+% keyboard
 for t = 1:(maxtime / waittime)
+% while true
     pause(waittime);
-    isset = arrayfun(@(x) x.isSet(), variable);
-
-    if all(isset), break; end
+    % This loop does not really work for algorithms that run iteratively
+    if variable(randi(nagents)).isSet
+%         fprintf('Experiment done...\n');
+        break
+    end
 end
 
 %% Gather results to return
-results.time = toc(t_experiment_start);
 results.vars.agent = agent;
 results.vars.variable = variable;
 results.vars.solver = solver;
@@ -224,12 +229,6 @@ else
     results.allevals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
 end
 
-if keepCostGraph && exist('timeList', 'var')
-    results.alltimes = timeList; 
-else
-    results.alltimes = results.time;
-end
-
 results.iterations = numIters;
 results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
 results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
@@ -237,10 +236,6 @@ results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
 results.graph.density = graphDensity(edges);
 results.graph.edges = edges;
 results.graph.nAgents = nagents;
-
-% clean up java objects
-arrayfun(@(x) x.reset, agent);
-nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
 end
 
@@ -255,23 +250,23 @@ for i = 1:size(edges,1)
     
     pc = nl.coenvl.sam.problemcontexts.LocalProblemContext(agent(a));
        
-%     if (variable(a).isSet())
+    if (variable(a).isSet())
         v = variable(a).getValue();
         if isa(v, 'double')
             pc.setValue(agent(a), java.lang.Integer(v));
         else
             pc.setValue(agent(a), v);
         end
-%     end
+    end
     
-%     if (variable(b).isSet())
+    if (variable(b).isSet())
         v = variable(b).getValue();
         if isa(v, 'double')
             pc.setValue(agent(b), java.lang.Integer(v));
         else
             pc.setValue(agent(b), v);
         end
-%     end
+    end
 
     cost = cost + costfun(1).evaluateFull(pc);
 end

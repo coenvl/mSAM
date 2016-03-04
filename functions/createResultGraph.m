@@ -12,20 +12,14 @@
 %
 
 %% Function Definition
-function [varargout] = createResultGraph(results, settings, y_field, plotOptions)
+function [varargout] = createResultGraph(results, x_field, y_field, plotOptions)
 
 %% Get what should be on the X axis
-if isfield(settings, 'density') && numel(settings.density) > 1
-    x = settings.density;
-    default_x_label = 'Graph density';
-elseif isfield(settings, 'nMaxIterations')
-    x = 1:settings.nMaxIterations;
-    default_x_label = 'Iterations';
+if ischar(x_field)
+    default_x_label = x_field;
 else
-    x = settings.nagents;
-    default_x_label = 'Graph size';
+    default_x_label = '';
 end
-
 
 %% Get the different algorithms from the results
 algos = sort(fieldnames(results));
@@ -50,6 +44,7 @@ plotRange = getSubOption([], 'double', plotOptions, 'plot', 'range');
 styles = getSubOption(default_styles, 'cell', plotOptions, 'plot', 'styles');
 colors = getSubOption(cubehelix(numel(algos) + 1, .5, -1.5, 3, 1), 'double', plotOptions, 'plot', 'colors');
 yfun = getSubOption(@(x) mean(x,2), 'function_handle', plotOptions, 'plot', 'y_fun');
+xfun = getSubOption(@(x) mean(x,2), 'function_handle', plotOptions, 'plot', 'x_fun');
 linewidth = getSubOption(2, 'double', plotOptions, 'plot', 'linewidth');
 do_errorbar = getSubOption(true, 'logical', plotOptions, 'plot', 'errorbar');
 
@@ -103,24 +98,28 @@ hold(ax, 'on');
 
 for i = 1:numel(algos)
     y = yfun(results.(algos{i}).(y_field));
-       
-    if size(y,1) == 1
-        if size(y,2) == numel(x)
-            error('Expected a data in columns, not rows');
-        else
-            y = repmat(y,numel(x),1);
+    x = yfun(results.(algos{i}).(x_field));
+    
+    if any(size(y,1) == 1)
+    	style = {'LineStyle', 'none', 'Marker', 'o'};
+    else
+        style = {'Marker', 'none'};
+
+        if ~isempty(plotRange)
+            x = x(plotRange);
+            y = y(plotRange);
         end
     end
-    
-    if ~isempty(plotRange)
-        x = x(plotRange);
-        y = y(plotRange);
-    end
+
+    % Sometimes the plotRange is empty if Y adjusted to max length of Y
+%     if isempty(x)
+%         x = 1:numel(y);
+%     end
     
     lw = linewidth;
     if strcmp(algos{i}, myalgo); lw = 1.5 * lw; end
     plot(ax, x, y, styles{mod(i-1, numel(styles))+1}, ...
-        'linewidth', lw, 'color', colors(mod(i-1, size(colors,1))+1,:));
+        'linewidth', lw, 'color', colors(mod(i-1, size(colors,1))+1,:), style{:});
 end
 hl = legend(ax, algos{:}, 'Location', 'NorthWest');
 
@@ -167,13 +166,15 @@ set(yax, 'Exponent', floor(log10(ymax)));
 % ht = title('Solution cost', 'fontsize', titlesize, 'fontname', font, 'fontweight', titleweight);
 xlabel(ax, x_label, 'fontsize', labelsize, 'fontname', labelfont);
 ylabel(ax, y_label, 'fontsize', labelsize, 'fontname', labelfont);
-
-if doExport 
+ 
+filename = [];
+if doExport
     filename = fullfile(outputfolder, sprintf('%s_%s.%s', expname, y_field, format));
     export_fig(fig, filename, printoptions{:}); 
-    if nargout > 0
-        varargout{1} = filename;
-    end
+end
+
+if nargout > 0
+    varargout{1} = filename;
 end
 
 end
