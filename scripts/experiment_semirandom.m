@@ -4,7 +4,7 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 10; % i.e. number of problems generated
+settings.numExps = 5; % i.e. number of problems generated
 settings.nMaxIterations = 100;
 settings.nStableIterations = [];
 settings.nagents = 200;
@@ -12,12 +12,8 @@ settings.visualizeProgress = true;
 
 %% Create the experiment options
 options.ncolors = uint16(3);
-options.constraint = 'nl.coenvl.sam.constraints.InequalityConstraint';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.LocalGameTheoreticCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.SemiRandomCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.NoisyLocalInequalityConstraintCostFunction';
+options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
+options.constraint.arguments = {1};
 
 % options.graphType = @scalefreeGraph;
 % options.graph.maxLinks = uint16(4);
@@ -26,13 +22,13 @@ options.constraint = 'nl.coenvl.sam.constraints.InequalityConstraint';
 % options.graphType = @randomGraph;
 % options.graph.density = 0.05;
 
-% options.graphType = @delaunayGraph;
-% options.graph.sampleMethod = 'poisson';
+options.graphType = @delaunayGraph;
+options.graph.sampleMethod = 'poisson';
 % options.graph.sampleMethod = 'random';
 
-options.graphType = @nGridGraph;
-options.graph.nDims = uint16(3);
-options.graph.doWrap = '';
+% options.graphType = @nGridGraph;
+% options.graph.nDims = uint16(3);
+% options.graph.doWrap = '';
 
 options.graph.nAgents = uint16(settings.nagents);
 
@@ -56,13 +52,13 @@ solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 % solvers.MCSMGM = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 % solvers.MGM = 'nl.coenvl.sam.solvers.MGMSolver';
 % solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
-% solvers.Random = 'nl.coenvl.sam.solvers.RandomSolver';
+solvers.Random = 'nl.coenvl.sam.solvers.RandomSolver';
 % solvers.SCA2 = 'nl.coenvl.sam.solvers.SCA2Solver';
 
 %%
 solvertypes = fieldnames(solvers);
 
-C = strsplit(options.constraint, '.');
+C = strsplit(options.constraint.type, '.');
 expname = sprintf('exp_%s_%s_i%d_d%d_n%d_t%s', C{end}, func2str(options.graphType), settings.numExps, options.ncolors, settings.nagents, datestr(now,30));
 
 % Do the experiment
@@ -74,20 +70,20 @@ for e = 1:settings.numExps
         solvername = solvertypes{a};
         options.solverType = solvers.(solvername);
 
-        try
+%         try
             fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
             exp = doExperiment(edges, options);
             fprintf('Finished in t = %0.1f seconds\n', exp.time);
-        catch err
-            warning('Timeout or error occured:');
-            disp(err);
-            
-            exp.time = nan;
-            exp.allcost = nan;
-            exp.allevals = nan;
-            exp.allmsgs = nan;
-            exp.iterations = nan;
-        end
+%         catch err
+%             warning('Timeout or error occured:');
+%             disp(err);
+%             
+%             exp.time = nan;
+%             exp.allcost = nan;
+%             exp.allevals = nan;
+%             exp.allmsgs = nan;
+%             exp.iterations = nan;
+%         end
             
         results.(solvername).costs{e} = exp.allcost; 
         results.(solvername).evals{e} = exp.allevals;
@@ -100,7 +96,7 @@ for e = 1:settings.numExps
             ydata = exp.allcost;
             xdata = exp.alltimes;
 
-            if numel(xdata) == 1
+            if numel(ydata) == 1
                 style = {'LineStyle', 'none', 'Marker', 'o'};
             else
                 style = {'LineStyle', '-', 'Marker', 'none'};
@@ -138,12 +134,13 @@ graphoptions.axes.ymin = [];
 % graphoptions.export.do = false;
 % graphoptions.export.name = expname;
 graphoptions.label.Y = 'Solution Cost';
-graphoptions.label.X = 'Algorithm Running Time';
+graphoptions.label.X = 'Iterations';
 graphoptions.plot.errorbar = false;
 graphoptions.plot.emphasize = []; %'CoCoA';
 % graphoptions.legend.location = 'NorthEast';
 % graphoptions.legend.orientation = 'Horizontal';
-graphoptions.plot.range = 1:30;
+% graphoptions.plot.x_fun = @(x) 1:x;
+graphoptions.plot.range = 1:70;
 resultsMat = prepareResults(results, graphoptions.plot.range);
-createResultGraph(resultsMat, 'times', 'costs', graphoptions);
+createResultGraph(resultsMat, 'iterations', 'costs', graphoptions);
 

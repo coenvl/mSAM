@@ -98,13 +98,18 @@ hold(ax, 'on');
 
 for i = 1:numel(algos)
     y = yfun(results.(algos{i}).(y_field));
-    x = yfun(results.(algos{i}).(x_field));
+    x = xfun(results.(algos{i}).(x_field));
     
-    if any(size(y,1) == 1)
+    if size(y,1) == 1
     	style = {'LineStyle', 'none', 'Marker', 'o'};
+        x = max(x);
     else
         style = {'Marker', 'none'};
-
+        
+        if size(x,1) == 1
+            x = 1:x;
+        end
+        
         if ~isempty(plotRange)
             x = x(plotRange);
             y = y(plotRange);
@@ -156,8 +161,8 @@ set(hl, 'fontsize', legendsize, 'fontname', legendfont, 'linewidth', ...
 set(ax, 'fontsize', axessize, 'fontname', axesfont, 'linewidth', axeslinewidth, ...
     'YMinorGrid', minorgrid, 'YMinorTick', minortick, ...
     'XMinorGrid', minorgrid, 'XMinorTick', minortick, ...
-    'Box', axesbox, 'YGrid', axesgrid, 'XGrid', axesgrid, ...
-    'XLim', [min(x) max(x)], 'YScale', yscale,  ...
+    'Box', axesbox, 'YGrid', axesgrid, 'XGrid', axesgrid, ... 
+    'YScale', yscale,  ... % 'XLim', [min(x) max(x)], ...
     'YLim', [yminval ymax]);%, 'YTick', ytick); %max(get(ax, 'YLim'))]);
 
 yax = get(ax, 'YAxis');

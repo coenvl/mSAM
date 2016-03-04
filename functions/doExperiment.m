@@ -7,8 +7,9 @@ nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIteratio
 nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
 solverType = getSubOption('nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver', ...
     'char', options, 'solverType');
-costFunctionType = getSubOption('nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction', ...
-    'char', options, 'costFunction');
+constraintType = getSubOption('nl.coenvl.sam.constraints.InequalityConstraint', ...
+    'char', options, 'constraint', 'type');
+constraintArgs = getSubOption({}, 'cell', options, 'constraint', 'arguments');
 maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
 waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
 agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
@@ -25,20 +26,8 @@ for i = 1:nagents
     agentName = sprintf('agent%05d', i);
     
     variable(i) = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
-    if strcmp(solverType, 'nl.coenvl.sam.solvers.FBSolver')
-        agent(i) = nl.coenvl.sam.agents.OrderedSolverAgent(agentName, variable(i));
-        costfun(i) = nl.coenvl.sam.costfunctions.InequalityConstraintCostFunction(agent(i).getSequenceID());
-        solver(i) = feval(solverType, agent(i), costfun(i));
-    elseif ~isempty(strfind(solverType, 'MaxSum'))
-        % Don't create the costfunction yet, that is for the constraints
-        agent(i) = nl.coenvl.sam.agents.LocalSolverAgent(agentName, variable(i));
-        solver(i) = feval(solverType, agent(i));
-    else
-        agent(i) = nl.coenvl.sam.agents.LocalSolverAgent(agentName, variable(i));
-        costfun(i) = feval(costFunctionType, agent(i));
-        solver(i) = feval(solverType, agent(i), costfun(i));
-    end
-    
+    agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
+    solver(i) = feval(solverType, agent(i));
     agent(i).setSolver(solver(i));
     
     for f = fields'
@@ -58,65 +47,40 @@ for i = 1:nagents
     agent(i).reset();
 end
 
-%% Add children and parent if required
-if isa(agent(1), 'nl.coenvl.sam.agents.OrderedAgent')
-    % We assume a static final ordering where each agent has just one child
-    % Therefore the algorithm is never really asynchronous
-    for i = 1:(nagents-1)
-        agent(i).addChild(agent(i+1));
-    end
-    
-    for i = 2:nagents
-        agent(i).setParent(agent(i-1));
-    end
-end
-
 %% Add the constraints
 
-if ~isempty(strfind(solverType, 'MaxSum'))
-    for i = 1:size(edges,1)
-        % Create constraint agent
-        agentName = sprintf('constraint%05d', i);
-        functionAgent(i) = nl.coenvl.sam.agents.LocalSolverAgent(agentName, null(1));
-        costfun(i) = feval(costFunctionType, functionAgent(i));
-        functionSolverType = char(solver(edges(i,1)).getCounterPart().getCanonicalName());
-        functionsolver(i) = feval(functionSolverType, functionAgent(i), costfun(i));
-        functionAgent(i).setSolver(functionsolver(i));
-        functionAgent(i).reset();
-        
-        % Connect constraints to variables
-        functionAgent(i).addToNeighborhood(agent(edges(i,1)));
-        functionAgent(i).addToNeighborhood(agent(edges(i,2)));
-        
-        % And vice versa
-        agent(edges(i,1)).addToNeighborhood(functionAgent(i));
-        agent(edges(i,2)).addToNeighborhood(functionAgent(i));
-        
-        functionAgent(i).init();
-    end
-else
-    for i = 1:nagents
-        k = find(edges(:,1) == i);
-        if isempty(k)
-            continue;
-        end
-
-        a = agent(i);
-        %s = solver(i);
-        for v = edges(k,2)'
-            if strcmp(solverType, 'nl.coenvl.sam.solvers.FBSolver')
-                costfun(i).addConstraintIndex(agent(v).getSequenceID());
-                costfun(v).addConstraintIndex(agent(i).getSequenceID());
-                %s.addConstraint(agent(v));
-                %solver(v).addConstraint(a);
-            else
-                % We are not MaxSum so create a "regular" graph
-                a.addToNeighborhood(agent(v));
-                agent(v).addToNeighborhood(a);
-            end
-        end
-    end
+% if ~isempty(strfind(solverType, 'MaxSum'))
+%     for i = 1:size(edges,1)
+%         % Create constraint agent
+%         agentName = sprintf('constraint%05d', i);
+%         functionAgent(i) = nl.coenvl.sam.agents.LocalSolverAgent(agentName, null(1));
+%         costfun(i) = feval(constraintType, functionAgent(i));
+%         functionSolverType = char(solver(edges(i,1)).getCounterPart().getCanonicalName());
+%         functionsolver(i) = feval(functionSolverType, functionAgent(i), costfun(i));
+%         functionAgent(i).setSolver(functionsolver(i));
+%         functionAgent(i).reset();
+%         
+%         % Connect constraints to variables
+%         functionAgent(i).addToNeighborhood(agent(edges(i,1)));
+%         functionAgent(i).addToNeighborhood(agent(edges(i,2)));
+%         
+%         % And vice versa
+%         agent(edges(i,1)).addToNeighborhood(functionAgent(i));
+%         agent(edges(i,2)).addToNeighborhood(functionAgent(i));
+%         
+%         functionAgent(i).init();
+%     end
+% else
+for i = 1:size(edges,1)
+    a = edges(i,1);
+    b = edges(i,2);
+    
+    constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
+    
+    agent(a).addConstraint(constraint(i));
+    agent(b).addConstraint(constraint(i));
 end
+% end
 
 %% Init all agents
 t_experiment_start = tic; % start the clock here
@@ -149,7 +113,7 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
     if keepCostGraph; 
         costList = []; %bestSolution;
         evalList = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-        msgList = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
+        msgList = nl.coenvl.sam.MailMan.getTotalSentMessages();
         timeList = toc(t_experiment_start);
     end
     
@@ -168,11 +132,11 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
             end
         end
             
-        cost = getCost(costFunctionType, variable, agent, edges);
+        cost = getCost(constraint);
         if keepCostGraph; 
             costList(numIters) = cost;
             evalList(numIters) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-            msgList(numIters) = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
+            msgList(numIters) = nl.coenvl.sam.MailMan.getTotalSentMessages();
             timeList(numIters) = toc(t_experiment_start);
         end
         
@@ -198,12 +162,12 @@ results.time = toc(t_experiment_start);
 results.vars.agent = agent;
 results.vars.variable = variable;
 results.vars.solver = solver;
-results.vars.costfun = costfun;
+results.vars.constraint = constraint;
 
 if exist('bestSolution', 'var')
     results.cost = bestSolution;
 else
-    results.cost = getCost(costFunctionType, variable, agent, edges);
+    results.cost = getCost(constraint);
 end
 
 if keepCostGraph && exist('costList', 'var')
@@ -215,7 +179,7 @@ end
 if keepCostGraph && exist('msgList', 'var')
     results.allmsgs = msgList; 
 else
-    results.allmsgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
+    results.allmsgs = nl.coenvl.sam.MailMan.getTotalSentMessages();
 end
 
 if keepCostGraph && exist('evalList', 'var')
@@ -230,9 +194,9 @@ else
     results.alltimes = results.time;
 end
 
-results.iterations = numIters;
+results.iterations = max(1,numIters);
 results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-results.msgs = nl.coenvl.sam.agents.AbstractSolverAgent.getTotalSentMessages();
+results.msgs = nl.coenvl.sam.MailMan.getTotalSentMessages();
 
 results.graph.density = graphDensity(edges);
 results.graph.edges = edges;
@@ -244,76 +208,10 @@ nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
 end
 
-function cost = getCost(costFunctionType, variable, agent, edges)
+function cost = getCost(constraint)
+%% Get solution costs
 
-costfun = feval(costFunctionType, null(1));
-
-cost = 0;
-for i = 1:size(edges,1)
-    a = edges(i,1);
-    b = edges(i,2);
-    
-    pc = nl.coenvl.sam.problemcontexts.LocalProblemContext(agent(a));
-       
-%     if (variable(a).isSet())
-        v = variable(a).getValue();
-        if isa(v, 'double')
-            pc.setValue(agent(a), java.lang.Integer(v));
-        else
-            pc.setValue(agent(a), v);
-        end
-%     end
-    
-%     if (variable(b).isSet())
-        v = variable(b).getValue();
-        if isa(v, 'double')
-            pc.setValue(agent(b), java.lang.Integer(v));
-        else
-            pc.setValue(agent(b), v);
-        end
-%     end
-
-    cost = cost + costfun(1).evaluateFull(pc);
-end
-
-end
-
-function cost = getCost_old(costfun, variable, agent)
-
-%% Get the results
-if isa(costfun(1), 'nl.coenvl.sam.costfunctions.InequalityConstraintCostFunction')
-    pc = nl.coenvl.sam.problemcontexts.IndexedProblemContext(-1);
-    for i = 1:numel(variable)
-        if (variable(i).isSet())
-            v = variable(i).getValue();
-            if isa(v, 'double')
-                pc.setValue(i-1, java.lang.Integer(v));
-            else
-                pc.setValue(i-1, v);
-            end
-        end
-    end
-else
-    pc = nl.coenvl.sam.problemcontexts.LocalProblemContext(agent(1));
-    for i = 1:numel(variable)
-        if (variable(i).isSet())
-            v = variable(i).getValue();
-            if isa(v, 'double')
-                pc.setValue(agent(i), java.lang.Integer(v));
-            else
-                pc.setValue(agent(i), v);
-            end
-        end
-    end
-end
-
-cost = 0;
-for i = 1:numel(costfun)
-%     cost = cost + costfun(i).currentValue();
-    cost = cost + costfun(i).evaluate(pc);
-end
-
-%cost = cost / 2; % Since symmetric cost functions
+cost = sum(arrayfun(@(x) x.getExternalCost(), constraint));
 
 end
 
@@ -328,8 +226,6 @@ end
 if ~isempty(nStableIterations) && (countDown <= 0)
     bool = true;
 end
-
-return
 
 end
 
