@@ -4,24 +4,24 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 10; % i.e. number of problems generated
-settings.nMaxIterations = 100;
-settings.nStableIterations = [];
+settings.numExps = 100; % i.e. number of problems generated
+settings.nMaxIterations = [];
+settings.nStableIterations = 100;
 settings.nagents = 200;
 settings.visualizeProgress = true;
 
 %% Create the experiment options
-options.ncolors = uint16(3);
-options.constraint = 'nl.coenvl.sam.constraints.InequalityConstraint';
+options.ncolors = uint16(10);
+% options.constraint = 'nl.coenvl.sam.constraints.InequalityConstraint';
 % options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction';
 % options.costFunction = 'nl.coenvl.sam.costfunctions.LocalGameTheoreticCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.SemiRandomCostFunction';
+options.costFunction = 'nl.coenvl.sam.costfunctions.SemiRandomCostFunction';
 % options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
 % options.costFunction = 'nl.coenvl.sam.costfunctions.NoisyLocalInequalityConstraintCostFunction';
 
-% options.graphType = @scalefreeGraph;
-% options.graph.maxLinks = uint16(4);
-% options.graph.initialsize = uint16(10);
+options.graphType = @scalefreeGraph;
+options.graph.maxLinks = uint16(4);
+options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = 0.05;
@@ -29,10 +29,10 @@ options.constraint = 'nl.coenvl.sam.constraints.InequalityConstraint';
 % options.graphType = @delaunayGraph;
 % options.graph.sampleMethod = 'poisson';
 % options.graph.sampleMethod = 'random';
-
-options.graphType = @nGridGraph;
-options.graph.nDims = uint16(3);
-options.graph.doWrap = '';
+% 
+% options.graphType = @nGridGraph;
+% options.graph.nDims = uint16(3);
+% options.graph.doWrap = '';
 
 options.graph.nAgents = uint16(settings.nagents);
 
@@ -42,27 +42,27 @@ options.maxTime = 120;
 options.waitTime = 1;
 options.keepCostGraph = true;
 
-% solvers.ACLS = 'nl.coenvl.sam.solvers.ACLSSolver';
+solvers.ACLS = 'nl.coenvl.sam.solvers.ACLSSolver';
 % solvers.ACLSUB = 'nl.coenvl.sam.solvers.ACLSUBSolver';
 % solvers.ACLSProb = 'nl.coenvl.sam.solvers.ACLSProbSolver';
 % solvers.AFB = 'nl.coenvl.sam.solvers.FBSolver';
 % solvers.CFL = 'nl.coenvl.sam.solvers.TickCFLSolver';
-% solvers.CoCoA = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
+solvers.CoCoA = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
 solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 % solvers.Greedy = 'nl.coenvl.sam.solvers.GreedyLocalSolver';
 % solvers.MaxSum = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
 % solvers.MaxSumAD = 'nl.coenvl.sam.solvers.MaxSumADVariableSolver';
-% solvers.MaxSumADVP = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
-% solvers.MCSMGM = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+solvers.MaxSumADVP = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+solvers.MCSMGM = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 % solvers.MGM = 'nl.coenvl.sam.solvers.MGMSolver';
-% solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
+solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
 % solvers.Random = 'nl.coenvl.sam.solvers.RandomSolver';
 % solvers.SCA2 = 'nl.coenvl.sam.solvers.SCA2Solver';
 
 %%
 solvertypes = fieldnames(solvers);
 
-C = strsplit(options.constraint, '.');
+C = strsplit(options.costFunction, '.');
 expname = sprintf('exp_%s_%s_i%d_d%d_n%d_t%s', C{end}, func2str(options.graphType), settings.numExps, options.ncolors, settings.nagents, datestr(now,30));
 
 % Do the experiment

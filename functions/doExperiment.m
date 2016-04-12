@@ -19,6 +19,10 @@ nagents = graphSize(edges);
 %% Setup the agents and variables
 nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
+if ~isempty(strfind(solverType, 'MaxSum'))
+    nStableIterations = nStableIterations * 2.5;
+end
+
 fields = fieldnames(agentProps);
 for i = 1:nagents
     varName = sprintf('variable%05d', i);
@@ -119,13 +123,13 @@ else
 end
 
 %% Init all agents
-t_experiment_start = tic; % start the clock here
 for i = nagents:-1:1
     agent(i).init();
     pause(.01);
 end
 
 %% Start the experiment
+t_experiment_start = tic; % start the clock here
 
 startidx = randi(nagents);
 a = solver(startidx);
@@ -155,9 +159,13 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
     
     % Iterate for AT LEAST nStableIterations
     countDown = nStableIterations;
+    fprintf('Iteration:');
     while ~doStop(numIters, nMaxIterations, countDown, nStableIterations)       
         countDown = countDown - 1;
         numIters = numIters + 1;
+        if (mod(numIters,25) == 0)
+            fprintf(' %d', numIters);
+        end
         for j = 1:nagents
             solver(j).tick();
         end
@@ -182,6 +190,7 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
             bestSolution = cost;
         end
     end
+    fprintf(' ... done\n');
 end
 %% Wat for the algorithms to converge
 
