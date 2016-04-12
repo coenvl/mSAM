@@ -17,6 +17,10 @@ keepCostGraph = getSubOption(false, 'logical', options, 'keepCostGraph');
 
 nagents = graphSize(edges);
 
+if strfind(solverType, 'MaxSum')
+    nStableIterations = nStableIterations .* 2.5;
+end
+
 %% Setup the agents and variables
 nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
@@ -26,7 +30,13 @@ for i = 1:nagents
     agentName = sprintf('agent%05d', i);
     
     variable(i) = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
-    agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
+    if strfind(solverType, 'FBSolver')
+        agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
+    elseif strfind(solverType, 'MaxSum')
+        agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
+    else
+        agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
+    end
     solver(i) = feval(solverType, agent(i));
     agent(i).setSolver(solver(i));
     
@@ -59,15 +69,15 @@ end
 %         functionsolver(i) = feval(functionSolverType, functionAgent(i), costfun(i));
 %         functionAgent(i).setSolver(functionsolver(i));
 %         functionAgent(i).reset();
-%         
+%
 %         % Connect constraints to variables
 %         functionAgent(i).addToNeighborhood(agent(edges(i,1)));
 %         functionAgent(i).addToNeighborhood(agent(edges(i,2)));
-%         
+%
 %         % And vice versa
 %         agent(edges(i,1)).addToNeighborhood(functionAgent(i));
 %         agent(edges(i,2)).addToNeighborhood(functionAgent(i));
-%         
+%
 %         functionAgent(i).init();
 %     end
 % else
@@ -76,14 +86,36 @@ for i = 1:size(edges,1)
     b = edges(i,2);
     
     constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
-    
-    agent(a).addConstraint(constraint(i));
-    agent(b).addConstraint(constraint(i));
+    if ~isempty(strfind(solverType, 'MaxSum'))
+        % Create constraint agent
+        agentName = sprintf('constraint%05d', i);
+        bipartiteConstraint = nl.coenvl.sam.constraints.BiPartiteConstraint(variable(a),variable(b),constraint(i));
+        constraintAgent(i) = nl.coenvl.sam.agents.ConstraintAgent(agentName, bipartiteConstraint);
+        functionSolverType = char(solver(a).getCounterPart().getCanonicalName());
+        constraintsolver(i) = feval(functionSolverType, constraintAgent(i));
+        constraintAgent(i).setSolver(constraintsolver(i));
+        
+        % Connect constraint to variables
+        agent(a).addFunctionAddress(constraintAgent(i).getID());
+        agent(b).addFunctionAddress(constraintAgent(i).getID());
+        
+        constraintAgent(i).reset();
+        constraintAgent(i).init();
+    else
+        agent(a).addConstraint(constraint(i));
+        agent(b).addConstraint(constraint(i));
+    end
 end
 % end
 
+%% Set agent's parents if need be
+if strfind(solverType, 'FBSolver')
+    for i = 2:nagents
+        agent(i-1).setNext(agent(i));
+    end
+end
+
 %% Init all agents
-t_experiment_start = tic; % start the clock here
 for i = nagents:-1:1
     agent(i).init();
     pause(.01);
@@ -91,16 +123,20 @@ end
 
 %% Start the experiment
 
+t_experiment_start = tic; % start the clock
 startidx = randi(nagents);
 a = solver(startidx);
-if isa(a, 'nl.coenvl.sam.solvers.GreedyCooperativeSolver')
+if isa(a, 'nl.coenvl.sam.solvers.GreedySolver')
+    msg = nl.coenvl.sam.messages.HashMessage('GreedySolver:AssignVariable');
+    a.push(msg);
+elseif isa(a, 'nl.coenvl.sam.solvers.GreedyCooperativeSolver')
     msg = nl.coenvl.sam.messages.HashMessage('GreedyCooperativeSolver:PickAVar');
+    a.push(msg);
+elseif isa(a, 'nl.coenvl.sam.solvers.CoCoSolver')
+    msg = nl.coenvl.sam.messages.HashMessage('CoCoSolver:PickAVar');
     a.push(msg);
 elseif isa(a, 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver')
     msg = nl.coenvl.sam.messages.HashMessage('UniqueFirstCooperativeSolver:PickAVar');
-    a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.GreedyLocalSolver')
-    msg = nl.coenvl.sam.messages.HashMessage('GreedyLocalSolver:AssignVariable');
     a.push(msg);
 end
 
@@ -110,7 +146,7 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
     %bestSolution = getCost(costfun, variable, agent);
     bestSolution = inf;
     
-    if keepCostGraph; 
+    if keepCostGraph;
         costList = []; %bestSolution;
         evalList = nl.coenvl.sam.ExperimentControl.getNumberEvals();
         msgList = nl.coenvl.sam.MailMan.getTotalSentMessages();
@@ -119,21 +155,22 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
     
     % Iterate for AT LEAST nStableIterations
     countDown = nStableIterations;
-    while ~doStop(numIters, nMaxIterations, countDown, nStableIterations)       
+    fprintf('Iteration: ');
+    while ~doStop(numIters, nMaxIterations, countDown, nStableIterations)
         countDown = countDown - 1;
         numIters = numIters + 1;
-        for j = 1:nagents
-            solver(j).tick();
+        if mod(numIters, 25) == 0
+             fprintf(' %d', numIters);
         end
-
-        if exist('functionsolver', 'var')
-            for j = 1:numel(functionsolver)
-                functionsolver(j).tick();
-            end
+        
+        arrayfun(@(x) x.tick, solver);
+        
+        if exist('constraintsolver', 'var')
+            arrayfun(@(x) x.tick, constraintsolver);
         end
-            
+        
         cost = getCost(constraint);
-        if keepCostGraph; 
+        if keepCostGraph;
             costList(numIters) = cost;
             evalList(numIters) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
             msgList(numIters) = nl.coenvl.sam.MailMan.getTotalSentMessages();
@@ -147,13 +184,14 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         end
     end
 end
+fprintf(' done\n')
 %% Wat for the algorithms to converge
 
 % This loop does not really work for algorithms that run iteratively
 for t = 1:(maxtime / waittime)
     pause(waittime);
     isset = arrayfun(@(x) x.isSet(), variable);
-
+    
     if all(isset), break; end
 end
 
@@ -163,6 +201,9 @@ results.vars.agent = agent;
 results.vars.variable = variable;
 results.vars.solver = solver;
 results.vars.constraint = constraint;
+if exist('constraintsolver', 'var')
+    results.vars.constraintsolver = constraintsolver;
+end
 
 if exist('bestSolution', 'var')
     results.cost = bestSolution;
@@ -171,25 +212,25 @@ else
 end
 
 if keepCostGraph && exist('costList', 'var')
-    results.allcost = costList; 
+    results.allcost = costList;
 else
     results.allcost = results.cost;
 end
 
 if keepCostGraph && exist('msgList', 'var')
-    results.allmsgs = msgList; 
+    results.allmsgs = msgList;
 else
     results.allmsgs = nl.coenvl.sam.MailMan.getTotalSentMessages();
 end
 
 if keepCostGraph && exist('evalList', 'var')
-    results.allevals = evalList; 
+    results.allevals = evalList;
 else
     results.allevals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
 end
 
 if keepCostGraph && exist('timeList', 'var')
-    results.alltimes = timeList; 
+    results.alltimes = timeList;
 else
     results.alltimes = results.time;
 end

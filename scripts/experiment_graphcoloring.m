@@ -11,22 +11,22 @@ settings.nagents = 200;
 settings.visualizeProgress = true;
 
 %% Create the experiment options
-options.ncolors = uint16(10);
+options.ncolors = uint16(3);
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
 % options.constraint.arguments = {1};
-% options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
-% options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
-options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
+% options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 
-options.graphType = @scalefreeGraph;
-options.graph.maxLinks = uint16(4);
-options.graph.initialsize = uint16(10);
+% options.graphType = @scalefreeGraph;
+% options.graph.maxLinks = uint16(4);
+% options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = 0.05;
 
-% options.graphType = @delaunayGraph;
-% options.graph.sampleMethod = 'poisson';
+options.graphType = @delaunayGraph;
+options.graph.sampleMethod = 'poisson';
 
 % options.graphType = @nGridGraph;
 % options.graph.nDims = uint16(3);

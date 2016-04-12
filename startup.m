@@ -21,4 +21,7 @@ else
     javaaddpath(fullfile(rootpath, 'lib', 'nl.coenvl.sam_1.0.jar'));
 end
 
+javaaddpath(fullfile(rootpath, 'lib', 'frodo2-0.0.1-SNAPSHOT-jar-with-dependencies.jar'));
+javaaddpath(fullfile(rootpath, 'lib', 'gson-2.6.2.jar'));
+
 end
