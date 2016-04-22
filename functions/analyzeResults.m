@@ -25,6 +25,7 @@ for i = 1:numel(algos)
     costs = nan(1,numel(y));
     msgs = nan(1,numel(y));
     evals = nan(1,numel(y));
+    times = nan(1,numel(y));
     
     % For all experiments
     for e = 1:numel(y);
@@ -38,6 +39,7 @@ for i = 1:numel(algos)
         costs(e) = results.(algos{i}).costs{e}(n);
         msgs(e) = results.(algos{i}).msgs{e}(n);
         evals(e) = results.(algos{i}).evals{e}(n);
+        times(e) = results.(algos{i}).times{e}(n);
     end
     
     if (nargout > 0)
@@ -45,13 +47,15 @@ for i = 1:numel(algos)
         out.(algos{i}).costs = nanmean(costs);
         out.(algos{i}).msgs = nanmean(msgs);
         out.(algos{i}).evals = nanmean(evals);
+        out.(algos{i}).times = nanmean(times);
         varargout{1} = out;
     else
         fprintf('Results for %s:\n', algos{i});
         fprintf('Iterations: %d\n', ceil(nanmean(iters)));
         fprintf('Costs: %0.1f\n', nanmean(costs));
         fprintf('Messages: %0.1f\n', nanmean(msgs));
-        fprintf('Evaluations: %0.1f\n\n', nanmean(evals));
+        fprintf('Evaluations: %0.1f\n', nanmean(evals));
+        fprintf('Times: %0.1f\n\n', nanmean(times));
     end
     
 end

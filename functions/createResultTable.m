@@ -21,11 +21,12 @@ end
 algos = fieldnames(A)';
 for i = 1:numel(algos)
     algoResults = [A.(algos{i})];
-    iterStr = sprintf(repmat('& % -4d ', 1, numel(algoResults)), round([algoResults.iterations]));
-    costStr = sprintf(repmat('& % -5d ', 1, numel(algoResults)), round([algoResults.costs]));
-    msgsStr = sprintf(repmat('& % -5d ', 1, numel(algoResults)), round([algoResults.msgs] / 1000));
-    evalStr = sprintf(repmat('& % -6d ', 1, numel(algoResults)), round([algoResults.evals] / 1000));
-    algoStr{i} = sprintf('\\hline % -10s %s %s %s %s', algos{i}, iterStr, costStr, msgsStr, evalStr);
+    iterStr = sprintf(repmat('&% -5d ', 1, numel(algoResults)), round([algoResults.iterations]));
+    costStr = sprintf(repmat('&% -5d ', 1, numel(algoResults)), round([algoResults.costs]));
+    msgsStr = sprintf(repmat('&% -5d ', 1, numel(algoResults)), round([algoResults.msgs] / 1000));
+    evalStr = sprintf(repmat('&% -6d ', 1, numel(algoResults)), round([algoResults.evals] / 1000));
+    timeStr = sprintf(repmat('&% -4.1f ', 1, numel(algoResults)), [algoResults.times]);
+    algoStr{i} = sprintf('\\hline % -10s %s %s %s %s %s', algos{i}, iterStr, costStr, msgsStr, evalStr, timeStr);
 end
 
 str = sprintf('%s \\\\\n', algoStr{:});

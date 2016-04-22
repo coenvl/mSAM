@@ -4,15 +4,16 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 100; % i.e. number of problems generated
+settings.numExps = 1; % i.e. number of problems generated
 settings.nMaxIterations = [];
 settings.nStableIterations = 100;
-settings.nagents = 200;
+settings.nagents = 50;
+settings.densities = .05:.05:.5;
 settings.visualizeProgress = true;
 settings.makeRandomConstraintCosts = true;
 
 %% Create the experiment options
-options.ncolors = uint16(5);
+options.ncolors = uint16(3);
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
 % options.constraint.arguments = {1};
 options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
@@ -20,19 +21,7 @@ options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 
-% options.graphType = @scalefreeGraph;
-% options.graph.maxLinks = uint16(4);
-% options.graph.initialsize = uint16(10);
-
-% options.graphType = @randomGraph;
-% options.graph.density = 0.1;
-
-% options.graphType = @delaunayGraph;
-% options.graph.sampleMethod = 'poisson';
-
-options.graphType = @nGridGraph;
-options.graph.nDims = uint16(3);
-options.graph.doWrap = '';
+options.graphType = @randomGraph;
 
 options.graph.nAgents = uint16(settings.nagents);
 
@@ -68,72 +57,47 @@ expname = sprintf('exp_%s_%s_i%d_d%d_n%d_t%s', C{end}, func2str(options.graphTyp
 
 % Do the experiment
 clear handles;
-for e = 1:settings.numExps
-    edges = feval(options.graphType, options.graph);
-    
-    if isfield(settings, 'makeRandomConstraintCosts') && settings.makeRandomConstraintCosts
-        constraintCosts = randi(10, options.ncolors, options.ncolors, numel(edges));
-        options.constraint.arguments = arrayfun(@(x) constraintCosts(:,:,x), 1:numel(edges), 'UniformOutput', false);
-    else
-        options.constraint.arguments = {};
-    end
-    
-    for a = 1:numel(solvertypes)
-        solvername = solvertypes{a};
-        options.solverType = solvers.(solvername);
+for i = 1:numel(settings.densities)
+    options.graph.density = settings.densities(i);
+    for e = 1:settings.numExps
+        edges = feval(options.graphType, options.graph);
 
-%         try
-            fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
-            exp = doExperiment(edges, options);
-            fprintf('Finished in t = %0.1f seconds\n', exp.time);
-%         catch err
-%             warning('Timeout or error occured:');
-%             disp(err);
-%             
-%             exp.time = nan;
-%             exp.allcost = nan;
-%             exp.allevals = nan;
-%             exp.allmsgs = nan;
-%             exp.iterations = nan;
-%             exp.alltimes = nan;
-%         end
-            
-        results.(solvername).costs{e} = exp.allcost; 
-        results.(solvername).evals{e} = exp.allevals;
-        results.(solvername).msgs{e} = exp.allmsgs;
-        results.(solvername).times{e} = exp.alltimes;
-        results.(solvername).iterations(e) = exp.iterations;
-        
-        if settings.visualizeProgress
-            % Visualize data
-            ydata = exp.allcost;
-            xdata = exp.alltimes;
+        if isfield(settings, 'makeRandomConstraintCosts') && settings.makeRandomConstraintCosts
+            constraintCosts = randi(10, options.ncolors, options.ncolors, numel(edges));
+            options.constraint.arguments = arrayfun(@(x) constraintCosts(:,:,x), 1:numel(edges), 'UniformOutput', false);
+        else
+            options.constraint.arguments = {};
+        end
 
-            if numel(ydata) == 1
-                style = {'LineStyle', 'none', 'Marker', 'o'};
-            else
-                style = {'LineStyle', '-', 'Marker', 'none'};
-            end
-            
-            if ~exist('handles', 'var') || ~isfield(handles, 'fig') || ~ishandle(handles.fig)
-                % Create figure
-                handles.fig = figure(007);
-                handles.ax = gca(handles.fig);
-                hold(handles.ax, 'on');
-                legendentries = {};
-                %handles.legend = legend(handles.ax, solvertypes);
-            end
+        for a = 1:numel(solvertypes)
+            solvername = solvertypes{a};
+            options.solverType = solvers.(solvername);
 
-            if ~isfield(handles, solvername) || ~ishandle(handles.(solvername))
-                handles.(solvername) = plot(xdata, ydata, 'parent', handles.ax, style{:});
-                legendentries = [legendentries solvername];
-                %handles.legend = legend(handles.ax, solvertypes);
-            else
-                set(handles.(solvername), 'XData', xdata, 'YData', ydata, style{:});
+%             try
+                fprintf('Performing experiment with %s (%d/%d) (%d/%d)\n', solvername, e, settings.numExps, i, numel(settings.densities));
+                exp = doExperiment(edges, options);
+                fprintf('Finished in t = %0.1f seconds\n', exp.time);
+%             catch err
+%                 warning('Timeout or error occured:');
+%                 disp(err);
+%                 
+%                 exp.time = nan;
+%                 exp.allcost = nan;
+%                 exp.allevals = nan;
+%                 exp.allmsgs = nan;
+%                 exp.iterations = nan;
+%                 exp.alltimes = nan;
+%             end
+
+            results.(solvername).costs{e,i} = exp.allcost; 
+            results.(solvername).evals{e,i} = exp.allevals;
+            results.(solvername).msgs{e,i} = exp.allmsgs;
+            results.(solvername).times{e,i} = exp.alltimes;
+            results.(solvername).iterations(e,i) = exp.iterations;
+
+            if settings.visualizeProgress
+                visualizeProgress(exp, solvername);
             end
-            
-            legend(handles.ax, legendentries);
-            drawnow;
         end
     end
 end

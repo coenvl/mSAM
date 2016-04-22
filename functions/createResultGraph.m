@@ -17,18 +17,20 @@ function [varargout] = createResultGraph(results, x_field, y_field, plotOptions)
 %% Get what should be on the X axis
 if ischar(x_field)
     default_x_label = x_field;
+    default_x_label(1) = upper(default_x_label(1));
 else
     default_x_label = '';
 end
 
 %% Get the different algorithms from the results
 algos = sort(fieldnames(results));
-myalgo = getSubOption('', 'char', plotOptions, 'plot', 'emphasize');
+myalgo = getSubOption({}, 'cell', plotOptions, 'plot', 'emphasize');
 
 % Set default style
 default_styles = repmat({'-', '--', '-.', ':'},1,ceil(numel(algos)/4));
 if ~isempty(myalgo)
-    algos = [myalgo; algos(~strcmp(algos, myalgo))];
+    k = cellfun(@(x) strcmp(x, algos), myalgo, 'UniformOutput', false);
+    algos = [myalgo(:); algos(~any([k{:}], 2))];
 %     default_styles = [{'o-'} default_styles];
 end
 
@@ -70,6 +72,8 @@ minortick = getSubOption('on', 'char', plotOptions, 'axes', 'minortick');
 
 yscale = getSubOption('linear', 'char', plotOptions, 'axes', 'yscale');
 yminval = getSubOption([], 'double', plotOptions, 'axes', 'ymin');
+xscale = getSubOption('linear', 'char', plotOptions, 'axes', 'xscale');
+xmax = getSubOption([], 'double', plotOptions, 'axes', 'xmax');
 
 labelfont = getSubOption('times', 'char', plotOptions, 'label', 'font');
 labelsize = getSubOption(16, 'double', plotOptions, 'label', 'fontsize');
@@ -106,14 +110,14 @@ for i = 1:numel(algos)
     else
         style = {'Marker', 'none'};
         
-        if size(x,1) == 1
-            x = 1:x;
-        end
-        
-        if ~isempty(plotRange)
-            x = x(plotRange);
-            y = y(plotRange);
-        end
+%         if size(x,1) == 1
+%             x = plotRange;
+%         end
+%         
+%         if ~isempty(plotRange)
+%             x = x(plotRange);
+%             y = y(plotRange);
+%         end
     end
 
     % Sometimes the plotRange is empty if Y adjusted to max length of Y
@@ -157,13 +161,17 @@ else
 end
 
 set(hl, 'fontsize', legendsize, 'fontname', legendfont, 'linewidth', ...
-    legendlinewidth, 'Box', legendbox, 'Location', legendloc);
+    legendlinewidth, 'Box', legendbox, 'Location', legendloc, 'Interpreter', 'none');
 set(ax, 'fontsize', axessize, 'fontname', axesfont, 'linewidth', axeslinewidth, ...
     'YMinorGrid', minorgrid, 'YMinorTick', minortick, ...
     'XMinorGrid', minorgrid, 'XMinorTick', minortick, ...
     'Box', axesbox, 'YGrid', axesgrid, 'XGrid', axesgrid, ... 
-    'YScale', yscale,  ... % 'XLim', [min(x) max(x)], ...
+    'YScale', yscale,  'XScale', xscale, ... % 'XLim', [min(x) max(x)], ...
     'YLim', [yminval ymax]);%, 'YTick', ytick); %max(get(ax, 'YLim'))]);
+
+if ~isempty(xmax)
+    xlim(ax, [0 xmax]);
+end
 
 yax = get(ax, 'YAxis');
 set(yax, 'Exponent', floor(log10(ymax)));

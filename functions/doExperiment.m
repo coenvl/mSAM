@@ -85,7 +85,20 @@ for i = 1:size(edges,1)
     a = edges(i,1);
     b = edges(i,2);
     
-    constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
+    if numel(constraintArgs) <= 1
+        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
+    elseif numel(constraintArgs) == size(edges,1)
+        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{i});
+    elseif mod(numel(constraintArgs), size(edges,1)) == 0
+        n = numel(constraintArgs) / size(edges,1);
+        k = (1+(i-1)*n):(i*n);
+        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
+    else
+        error('DOEXPERIMENT:INCORRECTARGUMENTCOUNT', ...
+            'Incorrect number of constraint arguments, must be 0, 1 or number of edges (%d)', ...
+            size(edges,1));
+    end
+    
     if ~isempty(strfind(solverType, 'MaxSum'))
         % Create constraint agent
         agentName = sprintf('constraint%05d', i);
@@ -183,8 +196,9 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
             bestSolution = cost;
         end
     end
+    fprintf(' done\n')
 end
-fprintf(' done\n')
+
 %% Wat for the algorithms to converge
 
 % This loop does not really work for algorithms that run iteratively
