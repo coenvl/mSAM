@@ -4,25 +4,25 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 100; % i.e. number of problems generated
+settings.numExps = 10; % i.e. number of problems generated
 settings.nMaxIterations = [];
-settings.nStableIterations = 100;
+settings.nStableIterations = 200;
 settings.nagents = 200;
 settings.visualizeProgress = true;
-settings.makeRandomConstraintCosts = true;
+settings.makeRandomConstraintCosts = false;
 
 %% Create the experiment options
-options.ncolors = uint16(5);
+options.ncolors = uint16(10);
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
 % options.constraint.arguments = {1};
-options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+% options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
 % options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
-% options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 
-% options.graphType = @scalefreeGraph;
-% options.graph.maxLinks = uint16(4);
-% options.graph.initialsize = uint16(10);
+options.graphType = @scalefreeGraph;
+options.graph.maxLinks = uint16(4);
+options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = 0.1;
@@ -30,9 +30,9 @@ options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
 % options.graphType = @delaunayGraph;
 % options.graph.sampleMethod = 'poisson';
 
-options.graphType = @nGridGraph;
-options.graph.nDims = uint16(3);
-options.graph.doWrap = '';
+% options.graphType = @nGridGraph;
+% options.graph.nDims = uint16(3);
+% options.graph.doWrap = '';
 
 options.graph.nAgents = uint16(settings.nagents);
 
@@ -47,8 +47,10 @@ solvers.ACLS = 'nl.coenvl.sam.solvers.ACLSSolver';
 % solvers.ACLSProb = 'nl.coenvl.sam.solvers.ACLSProbSolver';
 % solvers.AFB = 'nl.coenvl.sam.solvers.FBSolver';
 % solvers.CFL = 'nl.coenvl.sam.solvers.TickCFLSolver';
-solvers.CoCoA = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
+solvers.CoCoA = 'nl.coenvl.sam.solvers.CoCoASolver';
 solvers.CoCoS = 'nl.coenvl.sam.solvers.CoCoSolver';
+solvers.ReCoCoS = 'nl.coenvl.sam.solvers.ReCoCoSolver';
+% solvers.ReCoCoS2 = 'nl.coenvl.sam.solvers.ReCoCoSolverWorksGreat';
 solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 % solvers.Greedy = 'nl.coenvl.sam.solvers.GreedySolver';
 % solvers.MaxSum = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
@@ -105,35 +107,7 @@ for e = 1:settings.numExps
         results.(solvername).iterations(e) = exp.iterations;
         
         if settings.visualizeProgress
-            % Visualize data
-            ydata = exp.allcost;
-            xdata = exp.alltimes;
-
-            if numel(ydata) == 1
-                style = {'LineStyle', 'none', 'Marker', 'o'};
-            else
-                style = {'LineStyle', '-', 'Marker', 'none'};
-            end
-            
-            if ~exist('handles', 'var') || ~isfield(handles, 'fig') || ~ishandle(handles.fig)
-                % Create figure
-                handles.fig = figure(007);
-                handles.ax = gca(handles.fig);
-                hold(handles.ax, 'on');
-                legendentries = {};
-                %handles.legend = legend(handles.ax, solvertypes);
-            end
-
-            if ~isfield(handles, solvername) || ~ishandle(handles.(solvername))
-                handles.(solvername) = plot(xdata, ydata, 'parent', handles.ax, style{:});
-                legendentries = [legendentries solvername];
-                %handles.legend = legend(handles.ax, solvertypes);
-            else
-                set(handles.(solvername), 'XData', xdata, 'YData', ydata, style{:});
-            end
-            
-            legend(handles.ax, legendentries);
-            drawnow;
+            visualizeProgress(exp, solvername);
         end
     end
 end
@@ -149,7 +123,7 @@ graphoptions.figure.number = 188;
 graphoptions.axes.yscale = 'linear'; % True for most situations
 graphoptions.axes.xscale = 'linear';
 graphoptions.axes.ymin = [];
-graphoptions.axes.xmax = 250;
+% graphoptions.axes.xmax = 100;
 graphoptions.export.do = false;
 % graphoptions.export.name = expname;
 graphoptions.label.Y = 'Solution Cost';
@@ -162,4 +136,5 @@ graphoptions.plot.emphasize = []; %'CoCoA';
 % graphoptions.plot.range = 1:1600;
 resultsMat = prepareResults(results); %, graphoptions.plot.range);
 createResultGraph(resultsMat, 'times', 'costs', graphoptions);
+createResultTable(results)
 

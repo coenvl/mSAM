@@ -1,7 +1,7 @@
 %% Get Default options
 options = getGraphOptions();
 options.plot.colors = cubehelix(8, .5, -1.5, 3, 1);
-options.export.do = true;
+options.export.do = false;
 options.export.format = 'eps';
 options.export.folder = 'C:\Data\Documents\PHD\ecai2016\images';
 options.plot.errorbar = false;

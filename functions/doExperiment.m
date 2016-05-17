@@ -139,7 +139,12 @@ end
 t_experiment_start = tic; % start the clock
 startidx = randi(nagents);
 a = solver(startidx);
-if isa(a, 'nl.coenvl.sam.solvers.GreedySolver')
+if isa(a, 'nl.coenvl.sam.solvers.ReCoCoSolver') || isa(a, 'nl.coenvl.sam.solvers.ReCoCoSolverWorksGreat')
+    % Since this is a semi-iterative algorithm, tick one solver and wait
+    a.setRoot();
+    a.tick();
+    pauseUntilVariablesAreSet(variable, maxtime, waittime)
+elseif isa(a, 'nl.coenvl.sam.solvers.GreedySolver')
     msg = nl.coenvl.sam.messages.HashMessage('GreedySolver:AssignVariable');
     a.push(msg);
 elseif isa(a, 'nl.coenvl.sam.solvers.GreedyCooperativeSolver')
@@ -148,8 +153,8 @@ elseif isa(a, 'nl.coenvl.sam.solvers.GreedyCooperativeSolver')
 elseif isa(a, 'nl.coenvl.sam.solvers.CoCoSolver')
     msg = nl.coenvl.sam.messages.HashMessage('CoCoSolver:PickAVar');
     a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver')
-    msg = nl.coenvl.sam.messages.HashMessage('UniqueFirstCooperativeSolver:PickAVar');
+elseif isa(a, 'nl.coenvl.sam.solvers.CoCoASolver')
+    msg = nl.coenvl.sam.messages.HashMessage('CoCoASolver:PickAVar');
     a.push(msg);
 end
 
@@ -197,16 +202,9 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         end
     end
     fprintf(' done\n')
-end
-
-%% Wat for the algorithms to converge
-
-% This loop does not really work for algorithms that run iteratively
-for t = 1:(maxtime / waittime)
-    pause(waittime);
-    isset = arrayfun(@(x) x.isSet(), variable);
-    
-    if all(isset), break; end
+else
+    % The solver is not iterative, but may take a while to complete
+   pauseUntilVariablesAreSet(variable, maxtime, waittime) 
 end
 
 %% Gather results to return
@@ -267,6 +265,21 @@ function cost = getCost(constraint)
 %% Get solution costs
 
 cost = sum(arrayfun(@(x) x.getExternalCost(), constraint));
+
+end
+
+function pauseUntilVariablesAreSet(variable, maxtime, waittime)
+% Wait until all variables are assigned a value
+
+for t = 1:(maxtime / waittime)
+    isset = arrayfun(@(x) x.isSet(), variable);
+
+    if all(isset)
+        break
+    else
+        pause(waittime);
+    end
+end
 
 end
 

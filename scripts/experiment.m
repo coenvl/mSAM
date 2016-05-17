@@ -6,15 +6,16 @@ options.ncolors = uint16(10);
 
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
-options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
-% options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+% options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
 % options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
 % options.constraint.arguments = {1};
+makeRandomConstraintCosts = true;
 
 % options.solverType = 'nl.coenvl.sam.solvers.DSASolver';
-% options.solverType = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 % options.solverType = 'nl.coenvl.sam.solvers.CoCoSolver';
-% options.solverType = 'nl.coenvl.sam.solvers.GreedyCooperativeSolver';
+options.solverType = 'nl.coenvl.sam.solvers.ReCoCoSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.GreedySolver';
 % options.solverType = 'nl.coenvl.sam.solvers.TickCFLSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
@@ -24,25 +25,35 @@ options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 % options.solverType = 'nl.coenvl.sam.solvers.ACLSSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
-options.solverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 
 
-options.graph.nAgents = uint16(200);
+options.graph.nAgents = uint16(64);
 % options.graphType = @delaunayGraph;
 % options.graph.sampleMethod = 'poisson';
-options.graphType = @scalefreeGraph;
-options.graph.maxLinks = uint16(4);
-options.graph.initialsize = uint16(10);
+% options.graphType = @scalefreeGraph;
+% options.graph.maxLinks = uint16(4);
+% options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = .2;
 
+options.graphType = @nGridGraph;
+options.graph.nDims = uint16(3);
+options.graph.doWrap = '';
+
 % options.nStableIterations = uint16(100);
-options.nMaxIterations = uint16(1600);
+options.nMaxIterations = uint16(100);
 options.keepCostGraph = true;
 
 % Do the experiment
 edges = feval(options.graphType, options.graph);
+if makeRandomConstraintCosts
+    constraintCosts = randi(10, options.ncolors, options.ncolors, numel(edges));
+    options.constraint.arguments = arrayfun(@(x) constraintCosts(:,:,x), 1:numel(edges), 'UniformOutput', false);
+else
+    options.constraint.arguments = {};
+end
 experimentResult = doExperiment(edges, options);
 
 % plot(experimentResult.allcost)
@@ -62,8 +73,8 @@ fprintf('\tGraph type: %s\n', func2str(options.graphType));
 fprintf('\t\t- size: %d\n', experimentResult.graph.nAgents);
 fprintf('\t\t- density: %1.5f\n', experimentResult.graph.density);
 
-figure(187)
-if isfield(experimentResult, 'allcost')
+if isfield(experimentResult, 'allcost') && numel(experimentResult.allcost) > 1
+    figure(187)
     plot(experimentResult.allcost)
 end
 
