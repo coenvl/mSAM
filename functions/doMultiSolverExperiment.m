@@ -1,24 +1,33 @@
-function results = doExperiment(edges, options)
+function results = doMultiSolverExperiment(edges, options)
 %#ok<*AGROW>
 
 %% Parse the options
-nColors = getSubOption(uint16(3), 'uint16', options, 'ncolors');
-nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIterations');
-nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
-solverType = getSubOption('nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver', ...
-    'char', options, 'solverType');
-constraintType = getSubOption('nl.coenvl.sam.constraints.InequalityConstraint', ...
-    'char', options, 'constraint', 'type');
-constraintArgs = getSubOption({}, 'cell', options, 'constraint', 'arguments');
-maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
-waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
-agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
-keepCostGraph = getSubOption(false, 'logical', options, 'keepCostGraph');
+try 
+    nColors = getSubOption(uint16(3), 'uint16', options, 'ncolors');
+    nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIterations');
+    nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
+    initSolverType = getSubOption('', 'char', options, 'initSolverType');
+    iterSolverType = getSubOption('nl.coenvl.sam.solvers.CoCoASolver', ...
+        'char', options, 'iterSolverType');
+    constraintType = getSubOption('nl.coenvl.sam.constraints.InequalityConstraint', ...
+        'char', options, 'constraint', 'type');
+    constraintArgs = getSubOption({}, 'cell', options, 'constraint', 'arguments');
+    maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
+    waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
+    agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
+    keepCostGraph = getSubOption(false, 'logical', options, 'keepCostGraph');
+catch err
+    err.throwAsCaller();
+end
 
 nagents = graphSize(edges);
 
-if strfind(solverType, 'MaxSum')
+if strfind(iterSolverType, 'MaxSum')
     nStableIterations = nStableIterations .* 2.5;
+end
+
+if isempty(initSolverType) && isempty(iterSolverType)
+    error('Either set initSolverType, iterSolverType or both')
 end
 
 %% Setup the agents and variables
@@ -30,15 +39,19 @@ for i = 1:nagents
     agentName = sprintf('agent%05d', i);
     
     variable(i) = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
-    if strfind(solverType, 'FBSolver')
-        agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
-    elseif strfind(solverType, 'MaxSum')
-        agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
-    else
-        agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
+%     if strfind(solverType, 'FBSolver')
+%         agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
+%     elseif strfind(solverType, 'MaxSum')
+%         agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
+%     else
+        agent(i) = nl.coenvl.sam.agents.MultiSolverAgent(variable(i), agentName);
+%     end
+    if ~isempty(initSolverType)
+        agent(i).setInitSolver(feval(initSolverType, agent(i)));
     end
-    solver(i) = feval(solverType, agent(i));
-    agent(i).setSolver(solver(i));
+    if ~isempty(iterSolverType)
+        agent(i).setIterativeSolver(feval(iterSolverType, agent(i)));
+    end
     
     for f = fields'
         prop = f{:};
@@ -54,33 +67,11 @@ for i = 1:nagents
     end
     
     variable(i).clear();
-    agent(i).reset();
+    % agent(i).reset();
 end
 
 %% Add the constraints
 
-% if ~isempty(strfind(solverType, 'MaxSum'))
-%     for i = 1:size(edges,1)
-%         % Create constraint agent
-%         agentName = sprintf('constraint%05d', i);
-%         functionAgent(i) = nl.coenvl.sam.agents.LocalSolverAgent(agentName, null(1));
-%         costfun(i) = feval(constraintType, functionAgent(i));
-%         functionSolverType = char(solver(edges(i,1)).getCounterPart().getCanonicalName());
-%         functionsolver(i) = feval(functionSolverType, functionAgent(i), costfun(i));
-%         functionAgent(i).setSolver(functionsolver(i));
-%         functionAgent(i).reset();
-%
-%         % Connect constraints to variables
-%         functionAgent(i).addToNeighborhood(agent(edges(i,1)));
-%         functionAgent(i).addToNeighborhood(agent(edges(i,2)));
-%
-%         % And vice versa
-%         agent(edges(i,1)).addToNeighborhood(functionAgent(i));
-%         agent(edges(i,2)).addToNeighborhood(functionAgent(i));
-%
-%         functionAgent(i).init();
-%     end
-% else
 for i = 1:size(edges,1)
     a = edges(i,1);
     b = edges(i,2);
@@ -99,78 +90,66 @@ for i = 1:size(edges,1)
             size(edges,1));
     end
     
-    if ~isempty(strfind(solverType, 'MaxSum'))
-        % Create constraint agent
-        agentName = sprintf('constraint%05d', i);
-        bipartiteConstraint = nl.coenvl.sam.constraints.BiPartiteConstraint(variable(a),variable(b),constraint(i));
-        constraintAgent(i) = nl.coenvl.sam.agents.ConstraintAgent(agentName, bipartiteConstraint);
-        functionSolverType = char(solver(a).getCounterPart().getCanonicalName());
-        constraintsolver(i) = feval(functionSolverType, constraintAgent(i));
-        constraintAgent(i).setSolver(constraintsolver(i));
-        
-        % Connect constraint to variables
-        agent(a).addFunctionAddress(constraintAgent(i).getID());
-        agent(b).addFunctionAddress(constraintAgent(i).getID());
-        
-        constraintAgent(i).reset();
-        constraintAgent(i).init();
-    else
+%     if ~isempty(strfind(solverType, 'MaxSum'))
+%         % Create constraint agent
+%         agentName = sprintf('constraint%05d', i);
+%         bipartiteConstraint = nl.coenvl.sam.constraints.BiPartiteConstraint(variable(a),variable(b),constraint(i));
+%         constraintAgent(i) = nl.coenvl.sam.agents.ConstraintAgent(agentName, bipartiteConstraint);
+%         functionSolverType = char(solver(a).getCounterPart().getCanonicalName());
+%         constraintsolver(i) = feval(functionSolverType, constraintAgent(i));
+%         constraintAgent(i).setSolver(constraintsolver(i));
+%         
+%         % Connect constraint to variables
+%         agent(a).addFunctionAddress(constraintAgent(i).getID());
+%         agent(b).addFunctionAddress(constraintAgent(i).getID());
+%         
+%         constraintAgent(i).reset();
+%         constraintAgent(i).init();
+%     else
         agent(a).addConstraint(constraint(i));
         agent(b).addConstraint(constraint(i));
-    end
+%     end
 end
 % end
 
 %% Set agent's parents if need be
-if strfind(solverType, 'FBSolver')
-    for i = 2:nagents
-        agent(i-1).setNext(agent(i));
-    end
-end
-
-%% Init all agents
-for i = nagents:-1:1
-    agent(i).init();
-    pause(.01);
-end
-
+% if strfind(solverType, 'FBSolver')
+%     for i = 2:nagents
+%         agent(i-1).setNext(agent(i));
+%     end
+% end
 %% Start the experiment
 
 t_experiment_start = tic; % start the clock
-startidx = randi(nagents);
-a = solver(startidx);
-if isa(a, 'nl.coenvl.sam.solvers.ReCoCoSolver') || isa(a, 'nl.coenvl.sam.solvers.ReCoCoSolverWorksGreat') || isa(a, 'nl.coenvl.sam.solvers.ReCoCoMGMSolver')
-    % Since this is a semi-iterative algorithm, tick one solver and wait
-    a.setRoot();
-    a.tick();
-    pauseUntilVariablesAreSet(variable, maxtime, waittime)
-elseif isa(a, 'nl.coenvl.sam.solvers.GreedySolver')
-    msg = nl.coenvl.sam.messages.HashMessage('GreedySolver:AssignVariable');
-    a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.GreedyCooperativeSolver')
-    msg = nl.coenvl.sam.messages.HashMessage('GreedyCooperativeSolver:PickAVar');
-    a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.CoCoSolver')
-    msg = nl.coenvl.sam.messages.HashMessage('CoCoSolver:PickAVar');
-    a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.CoCoASolver')
-    msg = nl.coenvl.sam.messages.HashMessage('CoCoASolver:PickAVar');
-    a.push(msg);
-end
+
+% Init all agents
+% for i = nagents:-1:1
+%     agent(i).init();
+%     pause(.01);
+% end
+
+% Special init for non-iterative solvers
+a = agent(randi(nagents));
+a.set(nl.coenvl.sam.solvers.ReCoCoSolver.ROOTNAME_PROPERTY, true);
+
+arrayfun(@(x) x.init(), agent);
+
+pauseUntilVariablesAreSet(variable, maxtime, waittime)
 
 %% Do the iterations
 numIters = 0;
-if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
+
+if ~isempty(iterSolverType)
     %bestSolution = getCost(costfun, variable, agent);
     bestSolution = inf;
-    
+
     if keepCostGraph;
         costList = []; %bestSolution;
         evalList = nl.coenvl.sam.ExperimentControl.getNumberEvals();
         msgList = nl.coenvl.sam.MailMan.getTotalSentMessages();
         timeList = toc(t_experiment_start);
     end
-    
+
     % Iterate for AT LEAST nStableIterations
     countDown = nStableIterations;
     fprintf('Iteration: ');
@@ -180,13 +159,13 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         if mod(numIters, 25) == 0
              fprintf(' %d', numIters);
         end
-        
-        arrayfun(@(x) x.tick, solver);
-        
-        if exist('constraintsolver', 'var')
-            arrayfun(@(x) x.tick, constraintsolver);
-        end
-        
+
+        arrayfun(@(x) x.tick, agent);
+
+    %     if exist('constraintsolver', 'var')
+    %         arrayfun(@(x) x.tick, constraintsolver);
+    %     end
+
         cost = getCost(constraint);
         if keepCostGraph;
             costList(numIters) = cost;
@@ -194,7 +173,7 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
             msgList(numIters) = nl.coenvl.sam.MailMan.getTotalSentMessages();
             timeList(numIters) = toc(t_experiment_start);
         end
-        
+
         % If a better solution is found, reset countDown
         if cost < bestSolution
             countDown = nStableIterations;
@@ -202,20 +181,21 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         end
     end
     fprintf(' done\n')
-else
-    % The solver is not iterative, but may take a while to complete
-   pauseUntilVariablesAreSet(variable, maxtime, waittime) 
 end
+
+% The solver is not iterative, but may take a while to complete
+pauseUntilVariablesAreSet(variable, maxtime, waittime) 
+
 
 %% Gather results to return
 results.time = toc(t_experiment_start);
 results.vars.agent = agent;
 results.vars.variable = variable;
-results.vars.solver = solver;
+% results.vars.solver = solver;
 results.vars.constraint = constraint;
-if exist('constraintsolver', 'var')
-    results.vars.constraintsolver = constraintsolver;
-end
+% if exist('constraintsolver', 'var')
+%     results.vars.constraintsolver = constraintsolver;
+% end
 
 if exist('bestSolution', 'var')
     results.cost = bestSolution;

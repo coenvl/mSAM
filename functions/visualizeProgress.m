@@ -43,7 +43,7 @@ else
     set(handles.(solvername), 'XData', xdata, 'YData', ydata, style{:});
 end
 
-legend(handles.ax, legendentries);
+legend(handles.ax, legendentries, 'Interpreter', 'none');
 drawnow;
 
 end
