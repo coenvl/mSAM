@@ -42,31 +42,55 @@ options.nMaxIterations = uint16(settings.nMaxIterations);
 options.maxTime = 120;
 options.waitTime = 1;
 options.keepCostGraph = true;
+options.initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 
-% solvers.ACLS = 'nl.coenvl.sam.solvers.ACLSSolver';
-% solvers.ACLSUB = 'nl.coenvl.sam.solvers.ACLSUBSolver';
-% solvers.ACLSProb = 'nl.coenvl.sam.solvers.ACLSProbSolver';
-% solvers.AFB = 'nl.coenvl.sam.solvers.FBSolver';
-% solvers.CFL = 'nl.coenvl.sam.solvers.TickCFLSolver';
-solvers.CoCoA = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers.CoCoS = 'nl.coenvl.sam.solvers.CoCoSolver';
-% solvers.ReCoCoS = 'nl.coenvl.sam.solvers.ReCoCoSolver';
-% solvers.ReCoCoSMGM = 'nl.coenvl.sam.solvers.ReCoCoMGMSolver';
-% solvers.ReCoCoS2 = 'nl.coenvl.sam.solvers.ReCoCoSolverWorksGreat';
-% solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
-% solvers.Greedy = 'nl.coenvl.sam.solvers.GreedySolver';
-% solvers.MaxSum = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
-% solvers.MaxSumAD = 'nl.coenvl.sam.solvers.MaxSumADVariableSolver';
-solvers.MaxSumADVP = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
-solvers.MCSMGM = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-% solvers.MGM = 'nl.coenvl.sam.solvers.MGMSolver';
-solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
-% solvers.Random = 'nl.coenvl.sam.solvers.RandomSolver';
-% solvers.SCA2 = 'nl.coenvl.sam.solvers.SCA2Solver';
+solvers = {};
+
+solvers(end+1).name = 'CoCoA';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoSolver';
+solvers(end).iterSolverType = '';
+
+solvers(end+1).name = 'CoCoA_UF';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+solvers(end).iterSolverType = '';
+
+solvers(end+1).name = 'ACLS';
+solvers(end).initSolverType = '';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+
+solvers(end+1).name = 'CoCoA - ACLS';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+
+solvers(end+1).name = 'CoCoA - ACLSUB';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+
+solvers(end+1).name = 'DSA';
+solvers(end).initSolverType = '';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+
+solvers(end+1).name = 'CoCoA - DSA';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+
+solvers(end+1).name = 'MCSMGM';
+solvers(end).initSolverType = '';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+
+solvers(end+1).name = 'CoCoA - MCSMGM';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+
+solvers(end+1).name = 'MGM2';
+solvers(end).initSolverType = '';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+
+solvers(end+1).name = 'CoCoA - MGM2';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
 
 %%
-solvertypes = fieldnames(solvers);
-
 C = strsplit(options.constraint.type, '.');
 expname = sprintf('exp_%s_%s_i%d_d%d_n%d_t%s', C{end}, func2str(options.graphType), settings.numExps, options.ncolors, settings.nagents, datestr(now,30));
 
@@ -82,13 +106,14 @@ for e = 1:settings.numExps
         options.constraint.arguments = {};
     end
     
-    for a = 1:numel(solvertypes)
-        solvername = solvertypes{a};
-        options.solverType = solvers.(solvername);
+    for a = 1:numel(solvers)
+        solvername = solvers(a).name;
+        options.initSolverType = solvers(a).initSolverType;
+        options.iterSolverType = solvers(a).iterSolverType;
 
 %         try
             fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
-            exp = doExperiment(edges, options);
+            exp = doMultiSolverExperiment(edges, options);
             fprintf('Finished in t = %0.1f seconds\n', exp.time);
 %         catch err
 %             warning('Timeout or error occured:');
@@ -101,15 +126,17 @@ for e = 1:settings.numExps
 %             exp.iterations = nan;
 %             exp.alltimes = nan;
 %         end
-            
-        results.(solvername).costs{e} = exp.allcost; 
-        results.(solvername).evals{e} = exp.allevals;
-        results.(solvername).msgs{e} = exp.allmsgs;
-        results.(solvername).times{e} = exp.alltimes;
-        results.(solvername).iterations(e) = exp.iterations;
+        
+        solverfield = matlab.lang.makeValidName(solvername);
+        results.(solverfield).solver = solvers(a);
+        results.(solverfield).costs{e} = exp.allcost; 
+        results.(solverfield).evals{e} = exp.allevals;
+        results.(solverfield).msgs{e} = exp.allmsgs;
+        results.(solverfield).times{e} = exp.alltimes;
+        results.(solverfield).iterations(e) = exp.iterations;
         
         if settings.visualizeProgress
-            visualizeProgress(exp, solvername);
+            visualizeProgress(exp, solverfield);
         end
     end
 end
@@ -124,7 +151,7 @@ graphoptions = getGraphOptions();
 graphoptions.figure.number = 188;
 graphoptions.axes.yscale = 'linear'; % True for most situations
 graphoptions.axes.xscale = 'linear';
-% graphoptions.axes.ymin = [];
+graphoptions.axes.ymin = [];
 % graphoptions.axes.xmax = 100;
 graphoptions.export.do = false;
 % graphoptions.export.name = expname;

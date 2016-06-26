@@ -41,11 +41,14 @@ for i = 1:nagents
     variable(i) = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
 %     if strfind(solverType, 'FBSolver')
 %         agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
-%     elseif strfind(solverType, 'MaxSum')
-%         agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
 %     else
-        agent(i) = nl.coenvl.sam.agents.MultiSolverAgent(variable(i), agentName);
-%     end
+
+    if strfind(iterSolverType, 'MaxSum')
+       agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
+    else
+       agent(i) = nl.coenvl.sam.agents.MultiSolverAgent(variable(i), agentName);
+    end
+    
     if ~isempty(initSolverType)
         agent(i).setInitSolver(feval(initSolverType, agent(i)));
     end
@@ -77,13 +80,16 @@ for i = 1:size(edges,1)
     b = edges(i,2);
     
     if numel(constraintArgs) <= 1
+        % Create a constraint always with same argument
         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
     elseif numel(constraintArgs) == size(edges,1)
+        % Create a constraint for every argument
         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{i});
     elseif mod(numel(constraintArgs), size(edges,1)) == 0
-        n = numel(constraintArgs) / size(edges,1);
-        k = (1+(i-1)*n):(i*n);
-        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
+        error('Deprecated style of constraint argumentations!');
+%         n = numel(constraintArgs) / size(edges,1);
+%         k = (1+(i-1)*n):(i*n);
+%         constraiint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
     else
         error('DOEXPERIMENT:INCORRECTARGUMENTCOUNT', ...
             'Incorrect number of constraint arguments, must be 0, 1 or number of edges (%d)', ...
@@ -122,15 +128,9 @@ end
 
 t_experiment_start = tic; % start the clock
 
-% Init all agents
-% for i = nagents:-1:1
-%     agent(i).init();
-%     pause(.01);
-% end
-
 % Special init for non-iterative solvers
 a = agent(randi(nagents));
-a.set(nl.coenvl.sam.solvers.ReCoCoSolver.ROOTNAME_PROPERTY, true);
+a.set(nl.coenvl.sam.solvers.CoCoSolver.ROOTNAME_PROPERTY, true);
 
 arrayfun(@(x) x.init(), agent);
 

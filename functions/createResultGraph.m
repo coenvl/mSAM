@@ -26,12 +26,8 @@ algos = sort(fieldnames(results));
 myalgo = getSubOption({}, 'cell', plotOptions, 'plot', 'emphasize');
 
 % Set default style
-default_styles = repmat({'-', '--', '-.', ':'},1,ceil(numel(algos)/4));
-if ~isempty(myalgo)
-    k = cellfun(@(x) strcmp(x, algos), myalgo, 'UniformOutput', false);
-    algos = [myalgo(:); algos(~any([k{:}], 2))];
-%     default_styles = [{'o-'} default_styles];
-end
+algos = [intersect(algos, myalgo); setdiff(algos, myalgo)];
+default_styles = repmat({'-', '--', '-.', ':'}, 1, ceil(numel(algos)/4));
 
 %% Go through the options to get the layout etc.
 

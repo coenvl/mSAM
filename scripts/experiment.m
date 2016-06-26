@@ -6,16 +6,17 @@ options.ncolors = uint16(10);
 
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
-% options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
-options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
+% options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
 % options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
 % options.constraint.arguments = {1};
-makeRandomConstraintCosts = true;
+makeRandomConstraintCosts = false;
 
 % options.solverType = 'nl.coenvl.sam.solvers.DSASolver';
 % options.solverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 % options.solverType = 'nl.coenvl.sam.solvers.CoCoSolver';
-options.solverType = 'nl.coenvl.sam.solvers.ReCoCoSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.ReCoCoSolver';
+options.solverType = 'nl.coenvl.sam.solvers.ReCoCoMGMSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.GreedySolver';
 % options.solverType = 'nl.coenvl.sam.solvers.TickCFLSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
@@ -28,19 +29,19 @@ options.solverType = 'nl.coenvl.sam.solvers.ReCoCoSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 
 
-options.graph.nAgents = uint16(64);
+options.graph.nAgents = uint16(200);
 % options.graphType = @delaunayGraph;
 % options.graph.sampleMethod = 'poisson';
-% options.graphType = @scalefreeGraph;
-% options.graph.maxLinks = uint16(4);
-% options.graph.initialsize = uint16(10);
+options.graphType = @scalefreeGraph;
+options.graph.maxLinks = uint16(4);
+options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = .2;
 
-options.graphType = @nGridGraph;
-options.graph.nDims = uint16(3);
-options.graph.doWrap = '';
+% options.graphType = @nGridGraph;
+% options.graph.nDims = uint16(3);
+% options.graph.doWrap = '';
 
 % options.nStableIterations = uint16(100);
 options.nMaxIterations = uint16(100);

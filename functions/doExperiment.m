@@ -2,18 +2,22 @@ function results = doExperiment(edges, options)
 %#ok<*AGROW>
 
 %% Parse the options
-nColors = getSubOption(uint16(3), 'uint16', options, 'ncolors');
-nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIterations');
-nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
-solverType = getSubOption('nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver', ...
-    'char', options, 'solverType');
-constraintType = getSubOption('nl.coenvl.sam.constraints.InequalityConstraint', ...
-    'char', options, 'constraint', 'type');
-constraintArgs = getSubOption({}, 'cell', options, 'constraint', 'arguments');
-maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
-waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
-agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
-keepCostGraph = getSubOption(false, 'logical', options, 'keepCostGraph');
+try 
+    nColors = getSubOption(uint16(3), 'uint16', options, 'ncolors');
+    nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIterations');
+    nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
+    solverType = getSubOption('nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver', ...
+        'char', options, 'solverType');
+    constraintType = getSubOption('nl.coenvl.sam.constraints.InequalityConstraint', ...
+        'char', options, 'constraint', 'type');
+    constraintArgs = getSubOption({}, 'cell', options, 'constraint', 'arguments');
+    maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
+    waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
+    agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
+    keepCostGraph = getSubOption(false, 'logical', options, 'keepCostGraph');
+catch err
+    err.throwAsCaller();
+end
 
 nagents = graphSize(edges);
 
@@ -30,9 +34,10 @@ for i = 1:nagents
     agentName = sprintf('agent%05d', i);
     
     variable(i) = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
-    if strfind(solverType, 'FBSolver')
-        agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
-    elseif strfind(solverType, 'MaxSum')
+%     if strfind(solverType, 'FBSolver')
+%         agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
+%     else
+    if strfind(solverType, 'MaxSum')
         agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
     else
         agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
@@ -54,7 +59,7 @@ for i = 1:nagents
     end
     
     variable(i).clear();
-    agent(i).reset();
+%     agent(i).reset();
 end
 
 %% Add the constraints
@@ -86,13 +91,16 @@ for i = 1:size(edges,1)
     b = edges(i,2);
     
     if numel(constraintArgs) <= 1
+        % Create a constraint always with same argument
         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
     elseif numel(constraintArgs) == size(edges,1)
+        % Create a constraint for every argument
         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{i});
     elseif mod(numel(constraintArgs), size(edges,1)) == 0
-        n = numel(constraintArgs) / size(edges,1);
-        k = (1+(i-1)*n):(i*n);
-        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
+        error('Deprecated style of constraint argumentations!');
+%         n = numel(constraintArgs) / size(edges,1);
+%         k = (1+(i-1)*n):(i*n);
+%         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
     else
         error('DOEXPERIMENT:INCORRECTARGUMENTCOUNT', ...
             'Incorrect number of constraint arguments, must be 0, 1 or number of edges (%d)', ...
@@ -122,41 +130,19 @@ end
 % end
 
 %% Set agent's parents if need be
-if strfind(solverType, 'FBSolver')
-    for i = 2:nagents
-        agent(i-1).setNext(agent(i));
-    end
-end
+% if strfind(solverType, 'FBSolver')
+%     for i = 2:nagents
+%         agent(i-1).setNext(agent(i));
+%     end
+% end
 
 %% Init all agents
-for i = nagents:-1:1
-    agent(i).init();
-    pause(.01);
-end
-
-%% Start the experiment
+a = agent(randi(nagents));
+a.set(nl.coenvl.sam.solvers.CoCoSolver.ROOTNAME_PROPERTY, true);
 
 t_experiment_start = tic; % start the clock
-startidx = randi(nagents);
-a = solver(startidx);
-if isa(a, 'nl.coenvl.sam.solvers.ReCoCoSolver') || isa(a, 'nl.coenvl.sam.solvers.ReCoCoSolverWorksGreat') || isa(a, 'nl.coenvl.sam.solvers.ReCoCoMGMSolver')
-    % Since this is a semi-iterative algorithm, tick one solver and wait
-    a.setRoot();
-    a.tick();
-    pauseUntilVariablesAreSet(variable, maxtime, waittime)
-elseif isa(a, 'nl.coenvl.sam.solvers.GreedySolver')
-    msg = nl.coenvl.sam.messages.HashMessage('GreedySolver:AssignVariable');
-    a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.GreedyCooperativeSolver')
-    msg = nl.coenvl.sam.messages.HashMessage('GreedyCooperativeSolver:PickAVar');
-    a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.CoCoSolver')
-    msg = nl.coenvl.sam.messages.HashMessage('CoCoSolver:PickAVar');
-    a.push(msg);
-elseif isa(a, 'nl.coenvl.sam.solvers.CoCoASolver')
-    msg = nl.coenvl.sam.messages.HashMessage('CoCoASolver:PickAVar');
-    a.push(msg);
-end
+
+arrayfun(@(x) x.init(), agent);
 
 %% Do the iterations
 numIters = 0;
@@ -173,12 +159,12 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
     
     % Iterate for AT LEAST nStableIterations
     countDown = nStableIterations;
-    fprintf('Iteration: ');
+    fprintf('Iterating: \n');
     while ~doStop(numIters, nMaxIterations, countDown, nStableIterations)
         countDown = countDown - 1;
         numIters = numIters + 1;
         if mod(numIters, 25) == 0
-             fprintf(' %d', numIters);
+             fprintf('\t%d: %f\n', numIters, cost);
         end
         
         arrayfun(@(x) x.tick, solver);
