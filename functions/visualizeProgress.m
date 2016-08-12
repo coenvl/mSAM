@@ -29,6 +29,7 @@ end
 
 if isempty(handles) || ~isfield(handles, 'fig') || ~ishandle(handles.fig)
     % Create figure
+    handles = struct();
     handles.fig = figure(007);
     handles.ax = gca(handles.fig);
     hold(handles.ax, 'on');
@@ -36,10 +37,12 @@ if isempty(handles) || ~isfield(handles, 'fig') || ~ishandle(handles.fig)
 end
 
 if ~isfield(handles, solvername) || ~ishandle(handles.(solvername))
-    handles.(solvername) = plot(xdata, ydata, 'parent', handles.ax, style{:});
+    % Create new plot
+    handles.(solvername) = plot(xdata, ydata, 'parent', handles.ax, style{:}, 'Color', rand(1,3));
     legendentries = [legendentries solvername];
     %handles.legend = legend(handles.ax, solvertypes);
 else
+    % Update existing plot
     set(handles.(solvername), 'XData', xdata, 'YData', ydata, style{:});
 end
 

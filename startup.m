@@ -5,11 +5,11 @@ rootpath = fileparts(mfilename('fullpath'));
 
 % Add relevant matlab folders
 addpath(rootpath);
+addpath(fullfile(rootpath, 'experiment'));
 addpath(fullfile(rootpath, 'functions'));
 addpath(fullfile(rootpath, 'functions', 'util'));
 addpath(fullfile(rootpath, 'functions', 'BA'));
 addpath(fullfile(rootpath, 'functions', 'graph'));
-% addpath(fullfile(rootpath, 'functions', 'experiment'));
 addpath(fullfile(rootpath, 'scripts'));
 
 % Check if there is a live java build

@@ -6,9 +6,8 @@ try
     nColors = getSubOption(uint16(3), 'uint16', options, 'ncolors');
     nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIterations');
     nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
-    initSolverType = getSubOption('', 'char', options, 'initSolverType');
-    iterSolverType = getSubOption('nl.coenvl.sam.solvers.CoCoASolver', ...
-        'char', options, 'iterSolverType');
+    initSolverType = getSubOption('nl.coenvl.sam.solvers.CoCoASolver', 'char', options, 'initSolverType');
+    iterSolverType = getSubOption('', 'char', options, 'iterSolverType');
     maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
     waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
     agentProps = getSubOption(struct, 'struct', options, 'agentProperties');

@@ -15,11 +15,11 @@ settings.visualizeProgress = true;
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
-% options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
-% load('staticCosts.mat');
-% options.constraint.arguments = {localCost, localCost};
+options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+load('staticCosts.mat');
+options.constraint.arguments = {localCost, localCost};
 % options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
-options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
+% options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 
 % options.graphType = @scalefreeGraph;
