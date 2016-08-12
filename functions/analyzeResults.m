@@ -14,7 +14,8 @@
 %% Function Definition
 function varargout = analyzeResults(results)
 
-algos = sort(fieldnames(results));
+% algos = sort(fieldnames(results));
+algos = fieldnames(results);
 
 % Compute for all algorithms
 for i = 1:numel(algos)

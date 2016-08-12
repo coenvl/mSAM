@@ -21,7 +21,7 @@ end
 
 nagents = graphSize(edges);
 
-if strfind(solverType, 'MaxSum')
+if strfind(solverType, 'MCSMGM')
     nStableIterations = nStableIterations .* 2.5;
 end
 
@@ -37,11 +37,11 @@ for i = 1:nagents
 %     if strfind(solverType, 'FBSolver')
 %         agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
 %     else
-    if strfind(solverType, 'MaxSum')
+%     if strfind(solverType, 'MaxSum')
         agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
-    else
-        agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
-    end
+%     else
+%         agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
+%     end
     solver(i) = feval(solverType, agent(i));
     agent(i).setSolver(solver(i));
     
@@ -64,38 +64,16 @@ end
 
 %% Add the constraints
 
-% if ~isempty(strfind(solverType, 'MaxSum'))
-%     for i = 1:size(edges,1)
-%         % Create constraint agent
-%         agentName = sprintf('constraint%05d', i);
-%         functionAgent(i) = nl.coenvl.sam.agents.LocalSolverAgent(agentName, null(1));
-%         costfun(i) = feval(constraintType, functionAgent(i));
-%         functionSolverType = char(solver(edges(i,1)).getCounterPart().getCanonicalName());
-%         functionsolver(i) = feval(functionSolverType, functionAgent(i), costfun(i));
-%         functionAgent(i).setSolver(functionsolver(i));
-%         functionAgent(i).reset();
-%
-%         % Connect constraints to variables
-%         functionAgent(i).addToNeighborhood(agent(edges(i,1)));
-%         functionAgent(i).addToNeighborhood(agent(edges(i,2)));
-%
-%         % And vice versa
-%         agent(edges(i,1)).addToNeighborhood(functionAgent(i));
-%         agent(edges(i,2)).addToNeighborhood(functionAgent(i));
-%
-%         functionAgent(i).init();
-%     end
-% else
 for i = 1:size(edges,1)
     a = edges(i,1);
     b = edges(i,2);
     
-    if numel(constraintArgs) <= 1
-        % Create a constraint always with same argument
-        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
-    elseif numel(constraintArgs) == size(edges,1)
+    if numel(constraintArgs) == size(edges,1)
         % Create a constraint for every argument
         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{i});
+    elseif numel(constraintArgs) < size(edges,1)
+        % Create a constraint always with same argument
+        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
     elseif mod(numel(constraintArgs), size(edges,1)) == 0
         error('Deprecated style of constraint argumentations!');
 %         n = numel(constraintArgs) / size(edges,1);
@@ -110,31 +88,18 @@ for i = 1:size(edges,1)
     if ~isempty(strfind(solverType, 'MaxSum'))
         % Create constraint agent
         agentName = sprintf('constraint%05d', i);
-        bipartiteConstraint = nl.coenvl.sam.constraints.BiPartiteConstraint(variable(a),variable(b),constraint(i));
-        constraintAgent(i) = nl.coenvl.sam.agents.ConstraintAgent(agentName, bipartiteConstraint);
+        constraintAgent(i) = nl.coenvl.sam.agents.ConstraintAgent(agentName, constraint(i), variable(a), variable(b));
         functionSolverType = char(solver(a).getCounterPart().getCanonicalName());
-        constraintsolver(i) = feval(functionSolverType, constraintAgent(i));
-        constraintAgent(i).setSolver(constraintsolver(i));
+        constraintAgent(i).setSolver(feval(functionSolverType, constraintAgent(i)));
         
-        % Connect constraint to variables
+        % Set constraint agent address as targets
         agent(a).addFunctionAddress(constraintAgent(i).getID());
         agent(b).addFunctionAddress(constraintAgent(i).getID());
-        
-        constraintAgent(i).reset();
-        constraintAgent(i).init();
     else
         agent(a).addConstraint(constraint(i));
         agent(b).addConstraint(constraint(i));
     end
 end
-% end
-
-%% Set agent's parents if need be
-% if strfind(solverType, 'FBSolver')
-%     for i = 2:nagents
-%         agent(i-1).setNext(agent(i));
-%     end
-% end
 
 %% Init all agents
 a = agent(randi(nagents));
@@ -143,6 +108,9 @@ a.set(nl.coenvl.sam.solvers.CoCoSolver.ROOTNAME_PROPERTY, true);
 t_experiment_start = tic; % start the clock
 
 arrayfun(@(x) x.init(), agent);
+if exist('constraintAgent', 'var')
+    arrayfun(@(x) x.init(), constraintAgent);
+end
 
 %% Do the iterations
 numIters = 0;
@@ -169,8 +137,8 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         
         arrayfun(@(x) x.tick, solver);
         
-        if exist('constraintsolver', 'var')
-            arrayfun(@(x) x.tick, constraintsolver);
+        if exist('constraintAgent', 'var')
+            arrayfun(@(x) x.tick, constraintAgent);
         end
         
         cost = getCost(constraint);
@@ -199,9 +167,6 @@ results.vars.agent = agent;
 results.vars.variable = variable;
 results.vars.solver = solver;
 results.vars.constraint = constraint;
-if exist('constraintsolver', 'var')
-    results.vars.constraintsolver = constraintsolver;
-end
 
 if exist('bestSolution', 'var')
     results.cost = bestSolution;
@@ -243,8 +208,8 @@ results.graph.edges = edges;
 results.graph.nAgents = nagents;
 
 % clean up java objects
-arrayfun(@(x) x.reset, agent);
-nl.coenvl.sam.ExperimentControl.ResetExperiment();
+% arrayfun(@(x) x.reset, agent);
+% nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
 end
 

@@ -54,7 +54,7 @@ legendfont = getSubOption('times', 'char', plotOptions, 'legend', 'font');
 legendsize = getSubOption(14, 'double', plotOptions, 'legend', 'fontsize');
 legendlinewidth = getSubOption(1, 'double', plotOptions, 'legend', 'linewidth');
 legendbox = getSubOption('off', 'char', plotOptions, 'legend', 'box');
-legendloc = getSubOption('NorthWest', 'char', plotOptions, 'legend', 'location');
+legendloc = getSubOption('NorthEast', 'char', plotOptions, 'legend', 'location');
 
 axesfont = getSubOption('times', 'char', plotOptions, 'axes', 'font');
 axessize = getSubOption(14, 'double', plotOptions, 'axes', 'fontsize');

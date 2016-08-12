@@ -1,4 +1,4 @@
-function results = doMultiSolverExperiment(edges, options)
+function results = doMeetingSchedulingExperiment(edges, options)
 %#ok<*AGROW>
 
 %% Parse the options
@@ -9,9 +9,6 @@ try
     initSolverType = getSubOption('', 'char', options, 'initSolverType');
     iterSolverType = getSubOption('nl.coenvl.sam.solvers.CoCoASolver', ...
         'char', options, 'iterSolverType');
-    constraintType = getSubOption('nl.coenvl.sam.constraints.InequalityConstraint', ...
-        'char', options, 'constraint', 'type');
-    constraintArgs = getSubOption({}, 'cell', options, 'constraint', 'arguments');
     maxtime = getSubOption(180, 'double', options, 'maxTime'); %maximum delay in seconds
     waittime = getSubOption(1/2, 'double', options, 'waitTime'); %delay between checks
     agentProps = getSubOption(struct, 'struct', options, 'agentProperties');
@@ -20,11 +17,13 @@ catch err
     err.throwAsCaller();
 end
 
-nagents = graphSize(edges);
+pref_field = 'preference';
+nagents = sum(cellfun(@(x) graphSize(x), edges));
+nmeetings = numel(edges);
 
-if strfind(iterSolverType, 'MCSMGM')
-    nStableIterations = nStableIterations .* 2.5;
-end
+% if strfind(iterSolverType, 'MaxSum')
+%     nStableIterations = nStableIterations .* 2.5;
+% end
 
 if isempty(initSolverType) && isempty(iterSolverType)
     error('Either set initSolverType, iterSolverType or both')
@@ -33,102 +32,117 @@ end
 %% Setup the agents and variables
 nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
-fields = fieldnames(agentProps);
-for i = 1:nagents
-    varName = sprintf('variable%05d', i);
-    agentName = sprintf('agent%05d', i);
-    
-    variable(i) = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
-%     if strfind(solverType, 'FBSolver')
-%         agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
-%     else
+idx = 0;
+for m = 1:nmeetings
+    graph = edges{m};
+    for i = unique(graph(:))'
+        idx = idx + 1;
+        varName = sprintf('variable%05d', idx);
+        agentName = sprintf('agent%05d', idx);
 
-%     if strfind(iterSolverType, 'MaxSum')
-       agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
-%     else
-%        agent(i) = nl.coenvl.sam.agents.MultiSolverAgent(variable(i), agentName);
-%     end
-    
-    if ~isempty(initSolverType)
-        agent(i).setInitSolver(feval(initSolverType, agent(i)));
-    end
-    if ~isempty(iterSolverType)
-        solver = feval(iterSolverType, agent(i));
-        agent(i).setIterativeSolver(solver);
-    end
-    
-    for f = fields'
-        prop = f{:};
-        if numel(agentPropts) == nagents
-            agent(i).set(prop, agentProps(i).(prop));
-        elseif numel(agentPropts) == 1 && numel(agentProps.(prop)) == 1
-            agent(i).set(prop, agentProps.(prop));
-        elseif numel(agentPropts) == 1 && numel(agentProps.(prop)) >= nagents
-            agent(i).set(prop, agentProps.(prop)(i));
-        else
-            error('DOEXPERIMENT:INCORRECTPROPERTYCOUNT', ...
-                'Incorrect number of properties, must be either 1 or number of agents (%d)', ...
-                nagents);
+        variable{m,i} = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(nColors), varName);
+        newagent = nl.coenvl.sam.agents.VariableAgent(variable{m,i}, agentName);
+        agent{m,i} = newagent;
+        
+        if ~isempty(initSolverType)
+            newagent.setInitSolver(feval(initSolverType, newagent));
         end
+        if ~isempty(iterSolverType)
+            solver = feval(iterSolverType, newagent);
+            newagent.setIterativeSolver(solver);
+        end
+
+        variable{m,i}.clear();
+        
+        % Set preference property
+        newagent.set(pref_field, agentProps(i).(pref_field));
     end
-    
-    variable(i).clear();
 end
 
 %% Add the constraints
 
-for i = 1:size(edges,1)
-    a = edges(i,1);
-    b = edges(i,2);
-    
-    if numel(constraintArgs) <= 1
-        % Create a constraint always with same argument
-        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
-    elseif numel(constraintArgs) == size(edges,1)
-        % Create a constraint for every argument
-        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{i});
-    elseif mod(numel(constraintArgs), size(edges,1)) == 0
-        error('Deprecated style of constraint argumentations!');
-%         n = numel(constraintArgs) / size(edges,1);
-%         k = (1+(i-1)*n):(i*n);
-%         constraiint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
-    else
-        error('DOEXPERIMENT:INCORRECTARGUMENTCOUNT', ...
-            'Incorrect number of constraint arguments, must be 0, 1 or number of edges (%d)', ...
-            size(edges,1));
-    end
-    
-    agent(a).addConstraint(constraint(i));
-    agent(b).addConstraint(constraint(i));
+peqc = 'nl.coenvl.sam.constraints.PreferentialEqualityConstraint';
+neqc = 'nl.coenvl.sam.constraints.InequalityConstraint';
 
-    if ~isempty(strfind(iterSolverType, 'MaxSum'))
-        % Create constraint agent
-        agentName = sprintf('constraint%05d', i);
-        constraintAgent(i) = nl.coenvl.sam.agents.ConstraintAgent(agentName, constraint(i), variable(a), variable(b));
-        functionSolverType = char(solver.getCounterPart().getCanonicalName());
-        constraintAgent(i).setSolver(feval(functionSolverType, constraintAgent(i)));
+constraintCost = 1e9;
+
+idx = 0;
+% First add constraints within meetings
+for m = 1:nmeetings
+    graph = edges{m};
+    for i = 1:size(graph,1)
+        a = graph(i,1);
+        b = graph(i,2);
+        idx = idx + 1;
         
-        % Set constraint agent address as targets
-        agent(a).addFunctionAddress(constraintAgent(i).getID());
-        agent(b).addFunctionAddress(constraintAgent(i).getID());
-    end
+        constraint{idx} = feval(peqc, variable{m,a}, variable{m,b}, agent{m,a}.get(pref_field), agent{m,b}.get(pref_field), constraintCost);
 
+        agent{m,a}.addConstraint(constraint{idx});
+        agent{m,b}.addConstraint(constraint{idx});
+
+        if ~isempty(strfind(iterSolverType, 'MaxSum'))
+            % Create constraint agent
+            agentName = sprintf('constraint%05d', i);
+            constraintAgent(idx) = nl.coenvl.sam.agents.ConstraintAgent(agentName, constraint{idx}, variable{m,a}, variable{m,b});
+            functionSolverType = char(solver.getCounterPart().getCanonicalName());
+            constraintAgent(idx).setSolver(feval(functionSolverType, constraintAgent(idx)));
+
+            % Set constraint agent address as targets
+            agent{m,a}.addFunctionAddress(constraintAgent(idx).getID());
+            agent{m,b}.addFunctionAddress(constraintAgent(idx).getID());
+        end
+    end
 end
+
+% Next add constraints between (same) agents
+for a = 1:size(agent,2)
+    for m1 = 1:nmeetings
+        if ~isempty(agent{m1,a})
+            for m2 = (m1 + 1):nmeetings
+                if ~isempty(agent{m2,a})
+                    % add constraints between agent {m1,a} and {m2,a}
+                    idx = idx + 1;
+        
+                    constraint{idx} = feval(neqc, variable{m1,a}, variable{m2,a}, constraintCost);
+
+                    agent{m1,a}.addConstraint(constraint{idx});
+                    agent{m2,a}.addConstraint(constraint{idx});
+
+                    if ~isempty(strfind(iterSolverType, 'MaxSum'))
+                        % Create constraint agent
+                        agentName = sprintf('constraint%05d', i);
+                        constraintAgent(idx) = nl.coenvl.sam.agents.ConstraintAgent(agentName, constraint{idx}, variable{m1,a}, variable{m2,a});
+                        functionSolverType = char(solver.getCounterPart().getCanonicalName());
+                        constraintAgent(idx).setSolver(feval(functionSolverType, constraintAgent(idx)));
+
+                        % Set constraint agent address as targets
+                        agent{m1,a}.addFunctionAddress(constraintAgent(idx).getID());
+                        agent{m2,a}.addFunctionAddress(constraintAgent(idx).getID());
+                    end
+                end
+            end
+        end
+    end 
+end
+
+
+allagents = [agent{:}];
+allvariables = [variable{:}];
 
 %% Start the experiment
 t_experiment_start = tic; % start the clock
 
 % Special init for non-iterative solvers
-a = agent(randi(nagents));
+a = allagents(randi(numel(allagents)));
 a.set(nl.coenvl.sam.solvers.CoCoSolver.ROOTNAME_PROPERTY, true);
 
-arrayfun(@(x) x.init(), agent);
+arrayfun(@(x) x.init(), allagents);
 if exist('constraintAgent', 'var')
     arrayfun(@(x) x.init(), constraintAgent);
 end
 
 if ~isempty(initSolverType)
-    pauseUntilVariablesAreSet(variable, maxtime, waittime)
+    pauseUntilVariablesAreSet(allvariables, maxtime, waittime)
 end
 
 %% Do the iterations
@@ -155,7 +169,7 @@ if ~isempty(iterSolverType)
              fprintf(' %d', numIters);
         end
 
-        arrayfun(@(x) x.tick, agent);
+        arrayfun(@(x) x.tick, allagents);
 
         if exist('constraintAgent', 'var')
             arrayfun(@(x) x.tick(), constraintAgent);
@@ -179,7 +193,7 @@ if ~isempty(iterSolverType)
 end
 
 % The solver is not iterative, but may take a while to complete
-pauseUntilVariablesAreSet(variable, maxtime, waittime) 
+pauseUntilVariablesAreSet(allvariables, maxtime, waittime) 
 
 %% Gather results to return
 results.time = toc(t_experiment_start);
@@ -226,12 +240,12 @@ results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
 results.msgs = nl.coenvl.sam.MailMan.getTotalSentMessages();
 %results.allmsgs = nl.coenvl.sam.MailMan.getSentMessages();
 
-results.graph.density = graphDensity(edges);
+% results.graph.density = graphDensity(edges);
 results.graph.edges = edges;
 results.graph.nAgents = nagents;
 
 % clean up java objects
-arrayfun(@(x) x.reset, agent);
+arrayfun(@(x) x.reset, allagents);
 nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
 end
@@ -239,7 +253,7 @@ end
 function cost = getCost(constraint)
 %% Get solution costs
 
-cost = sum(arrayfun(@(x) x.getExternalCost(), constraint));
+cost = sum(cellfun(@(x) x.getExternalCost(), constraint));
 
 end
 

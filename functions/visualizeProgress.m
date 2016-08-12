@@ -22,9 +22,9 @@ ydata = exp.allcost;
 xdata = exp.alltimes;
 
 if numel(ydata) == 1
-    style = {'LineStyle', 'none', 'Marker', 'o'};
+    style = {'LineStyle', 'none', 'Marker', 'o', 'LineWidth', 3};
 else
-    style = {'LineStyle', '-', 'Marker', 'none'};
+    style = {'LineStyle', '-', 'Marker', 'none', 'LineWidth', 3};
 end
 
 if isempty(handles) || ~isfield(handles, 'fig') || ~ishandle(handles.fig)

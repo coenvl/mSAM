@@ -7,44 +7,32 @@ warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 settings.numExps = 20; % i.e. number of problems generated
 settings.nMaxIterations = [];
 settings.nStableIterations = 200;
-settings.nagents = 200;
-settings.ncolors = 5;
+settings.nagents = 50;
+settings.nmeetings = 15;
+settings.ncolors = 10; % i.e. timeslots
 settings.visualizeProgress = true;
-% settings.makeRandomConstraintCosts = true;
 
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);
-% options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
-% options.constraint.arguments = {1};
-% options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
-% options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
-options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
-% options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 
-options.graphType = @scalefreeGraph;
-options.graph.maxLinks = uint16(4);
-options.graph.initialsize = uint16(10);
-
-% options.graphType = @randomGraph;
-% options.graph.density = 0.1;
-
-% options.graphType = @delaunayGraph;
-% options.graph.sampleMethod = 'poisson';
-
-% options.graphType = @nGridGraph;
-% options.graph.nDims = uint16(3);
-% options.graph.doWrap = '';
-
+options.graphType = @meetingSchedulingGraph;
 options.graph.nAgents = uint16(settings.nagents);
+options.graph.nMeetings = uint16(settings.nmeetings);
+% options.graph.meetingSizeFun = @(x) randi(x,varargin{:});
+% options.graph.meetingSizeFun = @(x) 2 + ((x-2) ./ ((x+1) - randi(x)));
+options.graph.meetingSizeFun = @(x) 2 + randi(x/10);
 
 options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
 options.maxTime = 120;
-options.waitTime = 1;
+options.waitTime = .01;
 options.keepCostGraph = true;
-options.initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 
 solvers = {};
+
+solvers(end+1).name = 'Greedy';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.GreedySolver';
+solvers(end).iterSolverType = '';
 
 solvers(end+1).name = 'CoCoA_simple';
 solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoSolver';
@@ -61,14 +49,14 @@ solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
 solvers(end+1).name = 'CoCoA - ACLS';
 solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
+% 
 solvers(end+1).name = 'CoCoA - ACLSUB';
 solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
 
-% solvers(end+1).name = 'DSA';
-% solvers(end).initSolverType = '';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(end+1).name = 'DSA';
+solvers(end).initSolverType = '';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
 
 % solvers(end+1).name = 'CoCoA - DSA';
 % solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
@@ -82,37 +70,43 @@ solvers(end+1).name = 'CoCoA - MCSMGM';
 solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 
-% solvers(end+1).name = 'MGM2';
-% solvers(end).initSolverType = '';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-% solvers(end+1).name = 'CoCoA - MGM2';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-solvers(end+1).name = 'Max-Sum_ADVP';
+solvers(end+1).name = 'MGM2';
 solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
 
-solvers(end+1).name = 'CoCoA - Max-Sum_ADVP';
+solvers(end+1).name = 'CoCoA - MGM2';
 solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+
+solvers(end+1).name = 'Max-Sum';
+solvers(end).initSolverType = '';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
+
+% solvers(end+1).name = 'Max-Sum_ADVP';
+% solvers(end).initSolverType = '';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+
+% solvers(end+1).name = 'CoCoA - Max-Sum_ADVP';
+% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 
 
 %%
-C = strsplit(options.constraint.type, '.');
-expname = sprintf('exp_%s_%s_i%d_d%d_n%d_t%s', C{end}, func2str(options.graphType), settings.numExps, options.ncolors, settings.nagents, datestr(now,30));
+expname = sprintf('exp_meetingScheduling_i%d_d%d_n%d_t%s', settings.numExps, options.ncolors, settings.nagents, datestr(now,30));
 
 % Do the experiment
 clear handles;
 for e = 1:settings.numExps
     edges = feval(options.graphType, options.graph);
     
-    if isfield(settings, 'makeRandomConstraintCosts') && settings.makeRandomConstraintCosts
-        constraintCosts = randi(10, options.ncolors, options.ncolors, numel(edges));
-        options.constraint.arguments = arrayfun(@(x) constraintCosts(:,:,x), 1:numel(edges), 'UniformOutput', false);
-    else
-        options.constraint.arguments = {};
+    while (~graphIsConnected(edges))
+        warning('EXPERIMENT:GRAPHNOTCONNECTED', 'Graph not connected, retrying...');
+        edges = feval(options.graphType, options.graph);
+    end
+    
+    for j = 1:settings.nagents
+        % Preference for certain timeslots
+        options.agentProperties(j).preference = rand(1,settings.ncolors);
     end
     
     for a = 1:numel(solvers)
@@ -120,21 +114,21 @@ for e = 1:settings.numExps
         options.initSolverType = solvers(a).initSolverType;
         options.iterSolverType = solvers(a).iterSolverType;
 
-%         try
+        try
             fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
-            exp = doMultiSolverExperiment(edges, options);
+            exp = doMeetingSchedulingExperiment(edges, options);
             fprintf('Finished in t = %0.1f seconds\n', exp.time);
-%         catch err
-%             warning('Timeout or error occured:');
-%             disp(err);
-%             
-%             exp.time = nan;
-%             exp.allcost = nan;
-%             exp.allevals = nan;
-%             exp.allmsgs = nan;
-%             exp.iterations = nan;
-%             exp.alltimes = nan;
-%         end
+        catch err
+            warning('Timeout or error occured:');
+            disp(err);
+            
+            exp.time = nan;
+            exp.allcost = nan;
+            exp.allevals = nan;
+            exp.allmsgs = nan;
+            exp.iterations = nan;
+            exp.alltimes = nan;
+        end
         
         solverfield = matlab.lang.makeValidName(solvername);
         results.(solverfield).solver = solvers(a);
@@ -159,19 +153,21 @@ save(fullfile('data', sprintf('%s_results.mat', expname)), 'settings', 'options'
 graphoptions = getGraphOptions();
 graphoptions.figure.number = 188;
 graphoptions.figure.height = 12;
-graphoptions.axes.yscale = 'linear'; % True for most situations
+graphoptions.axes.yscale = 'log'; % True for most situations
 graphoptions.axes.xscale = 'linear';
 graphoptions.axes.ymin = [];
-graphoptions.axes.xmax = 100;
-graphoptions.export.do = true;
-graphoptions.export.format = 'eps';
-graphoptions.export.name = expname;
+graphoptions.axes.xmax = 30;
+graphoptions.export.do = false;
+% graphoptions.export.format = 'eps';
+% graphoptions.export.name = expname;
 graphoptions.label.Y = 'Solution Cost';
 % graphoptions.label.X = 'Time';
 graphoptions.plot.errorbar = false;
 graphoptions.plot.emphasize = {}; %'CoCoA';
 graphoptions.legend.box = 'off';
 % graphoptions.legend.orientation = 'Horizontal';
+graphoptions.plot.y_fun = @(x) nanmean(x,2);
+graphoptions.plot.x_fun = @(x) nanmean(x,2);
 % graphoptions.plot.x_fun = @(x) 1:max(x);
 % graphoptions.plot.range = 1:1600;
 resultsMat = prepareResults(results); %, graphoptions.plot.range);

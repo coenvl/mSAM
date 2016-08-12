@@ -2,21 +2,23 @@ superclear
 rng(1, 'twister');
 
 colornames = {'red', 'green', 'cyan', 'blue', 'yellow', 'magenta', 'brown', 'coral', 'gold', 'black', 'azure'};
-options.ncolors = uint16(10);
+options.ncolors = uint16(11);
 
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
-options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
-% options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+load('staticCosts.mat');
+options.constraint.arguments = {localCost, localCost};
+
 % options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
 % options.constraint.arguments = {1};
 makeRandomConstraintCosts = false;
 
-% options.solverType = 'nl.coenvl.sam.solvers.DSASolver';
+options.solverType = 'nl.coenvl.sam.solvers.DSASolver';
 % options.solverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 % options.solverType = 'nl.coenvl.sam.solvers.CoCoSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.ReCoCoSolver';
-options.solverType = 'nl.coenvl.sam.solvers.ReCoCoMGMSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.ReCoCoMGMSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.GreedySolver';
 % options.solverType = 'nl.coenvl.sam.solvers.TickCFLSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
@@ -28,13 +30,12 @@ options.solverType = 'nl.coenvl.sam.solvers.ReCoCoMGMSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 
-
-options.graph.nAgents = uint16(200);
-% options.graphType = @delaunayGraph;
-% options.graph.sampleMethod = 'poisson';
-options.graphType = @scalefreeGraph;
-options.graph.maxLinks = uint16(4);
-options.graph.initialsize = uint16(10);
+options.graph.nAgents = uint16(3);
+options.graphType = @delaunayGraph;
+options.graph.sampleMethod = 'poisson';
+% options.graphType = @scalefreeGraph;
+% options.graph.maxLinks = uint16(4);
+% options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = .2;
@@ -52,8 +53,6 @@ edges = feval(options.graphType, options.graph);
 if makeRandomConstraintCosts
     constraintCosts = randi(10, options.ncolors, options.ncolors, numel(edges));
     options.constraint.arguments = arrayfun(@(x) constraintCosts(:,:,x), 1:numel(edges), 'UniformOutput', false);
-else
-    options.constraint.arguments = {};
 end
 experimentResult = doExperiment(edges, options);
 

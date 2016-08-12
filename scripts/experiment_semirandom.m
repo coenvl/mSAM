@@ -4,32 +4,33 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 1; % i.e. number of problems generated
+settings.numExps = 10; % i.e. number of problems generated
 settings.nMaxIterations = [];
 settings.nStableIterations = 200;
-settings.nagents = 200;
-settings.ncolors = 5;
+settings.nagents = 50;
+settings.ncolors = 11;
 settings.visualizeProgress = true;
 % settings.makeRandomConstraintCosts = true;
 
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);
 % options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
-% options.constraint.arguments = {1};
 % options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+% load('staticCosts.mat');
+% options.constraint.arguments = {localCost, localCost};
 % options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
 options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
 
-options.graphType = @scalefreeGraph;
-options.graph.maxLinks = uint16(4);
-options.graph.initialsize = uint16(10);
+% options.graphType = @scalefreeGraph;
+% options.graph.maxLinks = uint16(4);
+% options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = 0.1;
 
-% options.graphType = @delaunayGraph;
-% options.graph.sampleMethod = 'poisson';
+options.graphType = @delaunayGraph;
+options.graph.sampleMethod = 'poisson';
 
 % options.graphType = @nGridGraph;
 % options.graph.nDims = uint16(3);
@@ -40,24 +41,24 @@ options.graph.nAgents = uint16(settings.nagents);
 options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
 options.maxTime = 120;
-options.waitTime = 1;
+options.waitTime = .01;
 options.keepCostGraph = true;
 
-% solvers.ACLS = 'nl.coenvl.sam.solvers.ACLSSolver';
+solvers.ACLS = 'nl.coenvl.sam.solvers.ACLSSolver';
 % solvers.ACLSUB = 'nl.coenvl.sam.solvers.ACLSUBSolver';
 % solvers.ACLSProb = 'nl.coenvl.sam.solvers.ACLSProbSolver';
 % solvers.AFB = 'nl.coenvl.sam.solvers.FBSolver';
 % solvers.CFL = 'nl.coenvl.sam.solvers.TickCFLSolver';
 solvers.CoCoA = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers.CoCoS = 'nl.coenvl.sam.solvers.CoCoSolver';
+solvers.CoCoS = 'nl.coenvl.sam.solvers.CoCoSolver';
 % solvers.ReCoCoS = 'nl.coenvl.sam.solvers.ReCoCoSolver';
 % solvers.ReCoCoSMGM = 'nl.coenvl.sam.solvers.ReCoCoMGMSolver';
 % solvers.ReCoCoS2 = 'nl.coenvl.sam.solvers.ReCoCoSolverWorksGreat';
-% solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
+solvers.DSA = 'nl.coenvl.sam.solvers.DSASolver';
 % solvers.Greedy = 'nl.coenvl.sam.solvers.GreedySolver';
-% solvers.MaxSum = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
+solvers.MaxSum = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
 % solvers.MaxSumAD = 'nl.coenvl.sam.solvers.MaxSumADVariableSolver';
-solvers.MaxSumADVP = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+% solvers.MaxSumADVP = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 solvers.MCSMGM = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 % solvers.MGM = 'nl.coenvl.sam.solvers.MGMSolver';
 solvers.MGM2 = 'nl.coenvl.sam.solvers.MGM2Solver';
@@ -78,8 +79,6 @@ for e = 1:settings.numExps
     if isfield(settings, 'makeRandomConstraintCosts') && settings.makeRandomConstraintCosts
         constraintCosts = randi(10, options.ncolors, options.ncolors, numel(edges));
         options.constraint.arguments = arrayfun(@(x) constraintCosts(:,:,x), 1:numel(edges), 'UniformOutput', false);
-    else
-        options.constraint.arguments = {};
     end
     
     for a = 1:numel(solvertypes)
@@ -122,8 +121,8 @@ save(fullfile('data', sprintf('%s_results.mat', expname)), 'settings', 'options'
 
 graphoptions = getGraphOptions();
 graphoptions.figure.number = 188;
-graphoptions.axes.yscale = 'linear'; % True for most situations
-graphoptions.axes.xscale = 'linear';
+graphoptions.axes.yscale = 'log'; % True for most situations
+graphoptions.axes.xscale = 'log';
 % graphoptions.axes.ymin = [];
 % graphoptions.axes.xmax = 100;
 graphoptions.export.do = false;
