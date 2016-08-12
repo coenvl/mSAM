@@ -50,8 +50,8 @@ options.export.arguments = {'-transparent', '-q105', '-r600', '-m2'};
 options.export.folder = fullfile(pwd, 'figures');
 
 % Plot options
-options.plot.emphasize = 'CoCoA';
-options.plot.y_fun = @(x)nanmean(x,2);
+options.plot.emphasize = {'CoCoA', 'CoCoS'};
+options.plot.y_fun = @(x)mean(x,2);
 % options.plot.colors = cubehelix(6, .5, -1.5, 3, 1);
 options.plot.linewidth = scale_factor * 2;
 

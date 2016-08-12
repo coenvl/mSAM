@@ -14,15 +14,15 @@
 %% Function Definition
 function matresults = prepareResults(cellresults, range)
 
-if nargin < 2 || isempty(range)
-    range = 1:max(structfun(@(x) max([x.iterations{:}]), cellresults));
-%     range = 1:max([cellresults.(algos{i}).iterations{:}]);
-end
-
-
 algos = sort(fieldnames(cellresults));
 
-for i = 1:numel(algos)    
+for i = 1:numel(algos)
+    if nargin < 2 || isempty(range)
+        % range = 1:max(structfun(@(x) max(x.iterations), cellresults));
+        % range = 1:max([cellresults.(algos{i}).iterations{:}]);
+        range = 1:max(cellresults.(algos{i}).iterations);
+    end    
+    
     for e = 1:numel(cellresults.(algos{i}).iterations)
         matresults.(algos{i}).iterations(e) = cellresults.(algos{i}).iterations(e);
         matresults.(algos{i}).costs(:,e) = concatResults(cellresults.(algos{i}).costs{e}, range);

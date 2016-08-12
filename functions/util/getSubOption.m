@@ -56,10 +56,10 @@ end
 name = ['options' sprintf('.%s', fields{:})];
 
 % Recursively get the field that the user wants to check
-value = getSubStructValue(options, fields);
+[value, exists] = getSubStructValue(options, fields);
 
 % Set the default value if it is not found
-if isempty(value)
+if ~exists
     fprintf('Using default value for %s\n', name);
     value = default;
 end
@@ -79,15 +79,17 @@ end
 %
 % Returns the value of the struct.field1.field2.field3 or empty if it
 % doesn't exist
-function value = getSubStructValue(options, fields)
+function [value, exists] = getSubStructValue(options, fields)
 
 if ~isfield(options, fields{1})
+    exists = false;
     value = [];
 else
     if numel(fields) == 1
+        exists = true;
         value = options.(fields{1});
     else
-        value = getSubStructValue(options.(fields{1}), fields(2:end));
+        [value, exists] = getSubStructValue(options.(fields{1}), fields(2:end));
     end  
 end
 

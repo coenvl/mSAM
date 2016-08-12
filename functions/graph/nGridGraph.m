@@ -6,9 +6,9 @@ function e = nGridGraph(options)
 nAgents = double(getSubOption(uint16(20), 'uint16', options, 'nAgents'));
 nDims = double(getSubOption(uint16(2), 'uint16', options, 'nDims'));
 
-dSize = repmat(uint16(floor(nAgents^(1/nDims))),1,nDims);
+dSize = repmat(uint16(nAgents^(1/nDims)),1,nDims);
 for i = 1:(nDims-1)
-    dSize(i+1) = floor((nAgents / prod(dSize(1:i))) ^ (1 / (nDims - i)));
+    dSize(i+1) = uint16((nAgents / prod(dSize(1:i))) ^ (1 / (nDims - i)));
 end
 
 gridSize = getSubOption(dSize, 'uint16', options, 'gridSize')

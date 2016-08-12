@@ -1,4 +1,4 @@
-function results = doExperiment(edges, options)
+function results = doMultiSolverExperiment(edges, options)
 %#ok<*AGROW>
 
 %% Parse the options
@@ -6,8 +6,9 @@ try
     nColors = getSubOption(uint16(3), 'uint16', options, 'ncolors');
     nStableIterations = getSubOption(uint16([]), 'uint16', options, 'nStableIterations');
     nMaxIterations = getSubOption(uint16([]), 'uint16', options, 'nMaxIterations');
-    solverType = getSubOption('nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver', ...
-        'char', options, 'solverType');
+    initSolverType = getSubOption('', 'char', options, 'initSolverType');
+    iterSolverType = getSubOption('nl.coenvl.sam.solvers.CoCoASolver', ...
+        'char', options, 'iterSolverType');
     constraintType = getSubOption('nl.coenvl.sam.constraints.InequalityConstraint', ...
         'char', options, 'constraint', 'type');
     constraintArgs = getSubOption({}, 'cell', options, 'constraint', 'arguments');
@@ -21,8 +22,12 @@ end
 
 nagents = graphSize(edges);
 
-if strfind(solverType, 'MCSMGM')
+if strfind(iterSolverType, 'MCSMGM')
     nStableIterations = nStableIterations .* 2.5;
+end
+
+if isempty(initSolverType) && isempty(iterSolverType)
+    error('Either set initSolverType, iterSolverType or both')
 end
 
 %% Setup the agents and variables
@@ -37,19 +42,28 @@ for i = 1:nagents
 %     if strfind(solverType, 'FBSolver')
 %         agent(i) = nl.coenvl.sam.agents.LinkedAgent(variable(i), agentName);
 %     else
-%     if strfind(solverType, 'MaxSum')
-        agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
+
+%     if strfind(iterSolverType, 'MaxSum')
+       agent(i) = nl.coenvl.sam.agents.VariableAgent(variable(i), agentName);
 %     else
-%         agent(i) = nl.coenvl.sam.agents.SolverAgent(variable(i), agentName);
+%        agent(i) = nl.coenvl.sam.agents.MultiSolverAgent(variable(i), agentName);
 %     end
-    solver(i) = feval(solverType, agent(i));
-    agent(i).setSolver(solver(i));
+    
+    if ~isempty(initSolverType)
+        agent(i).setInitSolver(feval(initSolverType, agent(i)));
+    end
+    if ~isempty(iterSolverType)
+        solver = feval(iterSolverType, agent(i));
+        agent(i).setIterativeSolver(solver);
+    end
     
     for f = fields'
         prop = f{:};
-        if numel(agentProps.(prop)) == 1
+        if numel(agentPropts) == nagents
+            agent(i).set(prop, agentProps(i).(prop));
+        elseif numel(agentPropts) == 1 && numel(agentProps.(prop)) == 1
             agent(i).set(prop, agentProps.(prop));
-        elseif numel(agentProps.(prop)) >= nagents
+        elseif numel(agentPropts) == 1 && numel(agentProps.(prop)) >= nagents
             agent(i).set(prop, agentProps.(prop)(i));
         else
             error('DOEXPERIMENT:INCORRECTPROPERTYCOUNT', ...
@@ -59,7 +73,6 @@ for i = 1:nagents
     end
     
     variable(i).clear();
-%     agent(i).reset();
 end
 
 %% Add the constraints
@@ -68,79 +81,86 @@ for i = 1:size(edges,1)
     a = edges(i,1);
     b = edges(i,2);
     
-    if numel(constraintArgs) == size(edges,1)
-        % Create a constraint for every argument
-        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{i});
-    elseif numel(constraintArgs) < size(edges,1)
+    if numel(constraintArgs) <= 1
         % Create a constraint always with same argument
         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{:});
+    elseif numel(constraintArgs) == size(edges,1)
+        % Create a constraint for every argument
+        constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{i});
     elseif mod(numel(constraintArgs), size(edges,1)) == 0
         error('Deprecated style of constraint argumentations!');
 %         n = numel(constraintArgs) / size(edges,1);
 %         k = (1+(i-1)*n):(i*n);
-%         constraint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
+%         constraiint(i) = feval(constraintType, variable(a), variable(b), constraintArgs{k});
     else
         error('DOEXPERIMENT:INCORRECTARGUMENTCOUNT', ...
             'Incorrect number of constraint arguments, must be 0, 1 or number of edges (%d)', ...
             size(edges,1));
     end
     
-    if ~isempty(strfind(solverType, 'MaxSum'))
+    agent(a).addConstraint(constraint(i));
+    agent(b).addConstraint(constraint(i));
+
+    if ~isempty(strfind(iterSolverType, 'MaxSum'))
         % Create constraint agent
         agentName = sprintf('constraint%05d', i);
         constraintAgent(i) = nl.coenvl.sam.agents.ConstraintAgent(agentName, constraint(i), variable(a), variable(b));
-        functionSolverType = char(solver(a).getCounterPart().getCanonicalName());
+        functionSolverType = char(solver.getCounterPart().getCanonicalName());
         constraintAgent(i).setSolver(feval(functionSolverType, constraintAgent(i)));
         
         % Set constraint agent address as targets
         agent(a).addFunctionAddress(constraintAgent(i).getID());
         agent(b).addFunctionAddress(constraintAgent(i).getID());
-    else
-        agent(a).addConstraint(constraint(i));
-        agent(b).addConstraint(constraint(i));
     end
+
 end
 
-%% Init all agents
+%% Start the experiment
+t_experiment_start = tic; % start the clock
+
+% Special init for non-iterative solvers
 a = agent(randi(nagents));
 a.set(nl.coenvl.sam.solvers.CoCoSolver.ROOTNAME_PROPERTY, true);
-
-t_experiment_start = tic; % start the clock
 
 arrayfun(@(x) x.init(), agent);
 if exist('constraintAgent', 'var')
     arrayfun(@(x) x.init(), constraintAgent);
 end
 
+if ~isempty(initSolverType)
+    pauseUntilVariablesAreSet(variable, maxtime, waittime)
+end
+
 %% Do the iterations
 numIters = 0;
-if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
+
+if ~isempty(iterSolverType)
     %bestSolution = getCost(costfun, variable, agent);
     bestSolution = inf;
-    
+
     if keepCostGraph;
         costList = []; %bestSolution;
         evalList = nl.coenvl.sam.ExperimentControl.getNumberEvals();
         msgList = nl.coenvl.sam.MailMan.getTotalSentMessages();
         timeList = toc(t_experiment_start);
     end
-    
+
     % Iterate for AT LEAST nStableIterations
     countDown = nStableIterations;
-    fprintf('Iterating: \n');
+    fprintf('Iteration: ');
     while ~doStop(numIters, nMaxIterations, countDown, nStableIterations)
         countDown = countDown - 1;
         numIters = numIters + 1;
         if mod(numIters, 25) == 0
-             fprintf('\t%d: %f\n', numIters, cost);
+             fprintf(' %d', numIters);
         end
-        
-        arrayfun(@(x) x.tick, solver);
-        
+
+        arrayfun(@(x) x.tick, agent);
+
         if exist('constraintAgent', 'var')
-            arrayfun(@(x) x.tick, constraintAgent);
+            arrayfun(@(x) x.tick(), constraintAgent);
         end
-        
+
         cost = getCost(constraint);
         if keepCostGraph;
             costList(numIters) = cost;
@@ -148,7 +168,7 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
             msgList(numIters) = nl.coenvl.sam.MailMan.getTotalSentMessages();
             timeList(numIters) = toc(t_experiment_start);
         end
-        
+
         % If a better solution is found, reset countDown
         if cost < bestSolution
             countDown = nStableIterations;
@@ -156,17 +176,20 @@ if isa(solver(1), 'nl.coenvl.sam.solvers.IterativeSolver')
         end
     end
     fprintf(' done\n')
-else
-    % The solver is not iterative, but may take a while to complete
-   pauseUntilVariablesAreSet(variable, maxtime, waittime) 
 end
+
+% The solver is not iterative, but may take a while to complete
+pauseUntilVariablesAreSet(variable, maxtime, waittime) 
 
 %% Gather results to return
 results.time = toc(t_experiment_start);
 results.vars.agent = agent;
 results.vars.variable = variable;
-results.vars.solver = solver;
+% results.vars.solver = solver;
 results.vars.constraint = constraint;
+if exist('constraintAgent', 'var')
+    results.vars.constraintAgent = constraintAgent;
+end
 
 if exist('bestSolution', 'var')
     results.cost = bestSolution;
@@ -208,8 +231,8 @@ results.graph.edges = edges;
 results.graph.nAgents = nagents;
 
 % clean up java objects
-% arrayfun(@(x) x.reset, agent);
-% nl.coenvl.sam.ExperimentControl.ResetExperiment();
+arrayfun(@(x) x.reset, agent);
+nl.coenvl.sam.ExperimentControl.ResetExperiment();
 
 end
 

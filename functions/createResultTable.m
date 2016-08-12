@@ -14,24 +14,38 @@
 %% Function Definition
 function varargout = createResultTable(exp)
 
+if numel(exp) == 1
+    exp = struct('results', exp);
+end
+
 for i = 1:numel(exp)
     A(i) = analyzeResults(exp(i).results);
 end
 
+header = sprintf('\\begin{tabular}{lccccc}\n\t\\toprule\n\t% -32s & % -7s & % -7s & % -7s & % -7s & % -7s\\\\ \\midrule', 'Algorithm', 'I', 'S', 'M', 'E', 'T');
+
 algos = fieldnames(A)';
+algoStr = cell(size(algos));
 for i = 1:numel(algos)
     algoResults = [A.(algos{i})];
-    iterStr = sprintf(repmat('& % -4d ', 1, numel(algoResults)), round([algoResults.iterations]));
-    costStr = sprintf(repmat('& % -5d ', 1, numel(algoResults)), round([algoResults.costs]));
-    msgsStr = sprintf(repmat('& % -5d ', 1, numel(algoResults)), round([algoResults.msgs] / 1000));
-    evalStr = sprintf(repmat('& % -6d ', 1, numel(algoResults)), round([algoResults.evals] / 1000));
-    algoStr{i} = sprintf('\\hline % -10s %s %s %s %s', algos{i}, iterStr, costStr, msgsStr, evalStr);
+    
+    if all([algoResults.iterations] == 1)
+        iterStr = '& N/A    ';
+    else
+        iterStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.iterations]));
+    end
+    
+    costStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.costs] / 1000));
+    msgsStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.msgs] / 1000));
+    evalStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.evals] / 1000));
+    timeStr = sprintf(repmat('&% -6.1f ', 1, numel(algoResults)), [algoResults.times]);
+    algoStr{i} = sprintf('% -32s %s %s %s %s %s', strrep(algos{i}, '_', '\_'), iterStr, costStr, msgsStr, evalStr, timeStr);
 end
 
-str = sprintf('%s \\\\\n', algoStr{:});
+str = [header sprintf('\n\t%s \\\\', algoStr{:}) sprintf(' \\bottomrule\n\\end{tabular}')];
 
 if nargout > 0
     varargout{1} = str;
 else
-    fprintf('%s', str);
+    fprintf('%s\n', str);
 end
