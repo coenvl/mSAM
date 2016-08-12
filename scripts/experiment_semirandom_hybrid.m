@@ -39,10 +39,8 @@ options.graph.nAgents = uint16(settings.nagents);
 
 options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
-options.maxTime = 120;
-options.waitTime = 1;
-options.keepCostGraph = true;
-options.initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+options.maxTime = 180;
+options.waitTime = .01;
 
 solvers = {};
 

@@ -18,13 +18,16 @@ persistent handles;
 persistent legendentries;
 
 % Visualize data
-ydata = exp.allcost;
-xdata = exp.alltimes;
+ydata = exp.results.cost;
+xdata = exp.results.time;
+
+colors = cubehelix(12);
+styles = {'-', '--', '-.', ':'};
 
 if numel(ydata) == 1
-    style = {'LineStyle', 'none', 'Marker', 'o', 'LineWidth', 3};
+    style = {'LineStyle', 'none', 'Marker', 'o', 'LineWidth', 3, 'Color', colors(randi(10), :)};
 else
-    style = {'LineStyle', '-', 'Marker', 'none', 'LineWidth', 3};
+    style = {'LineStyle', styles{randi(numel(styles))}, 'Marker', 'none', 'LineWidth', 3, 'Color', colors(randi(10), :)};
 end
 
 if isempty(handles) || ~isfield(handles, 'fig') || ~ishandle(handles.fig)
@@ -38,12 +41,12 @@ end
 
 if ~isfield(handles, solvername) || ~ishandle(handles.(solvername))
     % Create new plot
-    handles.(solvername) = plot(xdata, ydata, 'parent', handles.ax, style{:}, 'Color', rand(1,3));
+    handles.(solvername) = plot(xdata, ydata, 'parent', handles.ax, style{:});
     legendentries = [legendentries solvername];
     %handles.legend = legend(handles.ax, solvertypes);
 else
     % Update existing plot
-    set(handles.(solvername), 'XData', xdata, 'YData', ydata, style{:});
+    set(handles.(solvername), 'XData', xdata, 'YData', ydata);
 end
 
 legend(handles.ax, legendentries, 'Interpreter', 'none');

@@ -12,7 +12,7 @@
 %
 
 %% Class definition:
-classdef Experiment < handle
+classdef (Abstract) Experiment < handle
     
     %% Public properties
     properties
@@ -113,43 +113,25 @@ classdef Experiment < handle
             obj.graph.edges = edges;
             obj.graph.density = graphDensity(edges);
             obj.graph.size = graphSize(edges);
-            
-            obj.initVariables();
-            obj.assignAgentProperties();
-            obj.initConstraints();
-            
-            if ~isempty(strfind(obj.iterSolverType, 'MaxSum'))
-                obj.initConstraintAgents();
-            end
+           
         end % EXPERIMENT
-        
-        %% SETINITSOLVERTYPE - Sets the solver type and resets experiment
-        function set.initSolverType(obj, type)
-            obj.initSolverType = type;
-            obj.reset();
-        end % SETINITSOLVERTYPE
-        
-        %% SETITERSOLVERTYPE - Sets the solver type and resets experiment
-        function set.iterSolverType(obj, type)
-            obj.iterSolverType = type;
-            obj.reset();
-        end % SETITERSOLVERTYPE
         
         %% RUN - Run the experiment
         function run(obj)
-            if ~isempty(obj.initSolverType)
-                obj.runInitSolver();
-            end
+            % Run implementation specific initialization           
+            obj.init();
+            
+            obj.runInitSolver();
             
             if ~isempty(obj.iterSolverType)
                 obj.runIterSolver();
+            else
+                obj.results.time = toc(obj.t_start); 
+                obj.results.numIters = 1;
+                obj.results.cost = obj.getCost();
+                obj.results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
+                obj.results.msgs = nl.coenvl.sam.MailMan.getTotalSentMessages();
             end
-            
-            % Gather results to return
-            obj.results.time = toc(obj.t_start);
-            obj.results.cost = obj.getCost();
-            obj.results.evals = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-            obj.results.msgs = nl.coenvl.sam.MailMan.getTotalSentMessages();
         end % RUN
         
         %% RESET - Resets the experiment so it can be run again
@@ -166,6 +148,22 @@ classdef Experiment < handle
             obj.reset();
         end % DELETE
         
+        %% SETINITSOLVERTYPE
+        function set.initSolverType(obj, type)
+            obj.initSolverType = type;
+            obj.reset();
+        end % SETINITSOLVERTYPE
+        
+        %% SETITERSOLVERTYPE
+        function set.iterSolverType(obj, type)
+            obj.iterSolverType = type;
+            obj.reset();
+        end % SETITERSOLVERTYPE
+        
+    end
+    
+    methods (Abstract)
+        init(obj);
     end
     
     methods (Sealed, Access = protected)
@@ -202,44 +200,11 @@ classdef Experiment < handle
         function cost = getCost(obj)
             cost = sum(cellfun(@(x) x.getExternalCost(), obj.constraint));
         end % GETCOST
-        
-        %% GETSOLVERCOUNTERPART - Get the constraint (MAXSUM) solver type 
-        function type = getSolverCounterPart(obj)
-            dummyVariable = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(1));
-            dummyAgent = nl.coenvl.sam.agents.VariableAgent(dummyVariable, 'dummy');
-            dummySolver = feval(obj.iterSolverType, dummyAgent);
-            
-            assert(isa(dummySolver, 'nl.coenvl.sam.solvers.MaxSumVariableSolver'), ...
-                'EXPERIMENT:initConstraintAgents:INVALIDSOLVERTYPE', ...
-                'Unexpected solver type, constraint agents only apply to MaxSum');
-            
-            type = dummySolver.getCounterPart().getCanonicalName();
-        end % GETSOLVERCOUNTERPART
     end
     
     %% Protected methods
-    methods (Access = protected)
-
-        %% INITVARIABLES - Initialize variables and agents
-        function initVariables(obj)
-            nagents = obj.graph.size;
-            for i = 1:nagents
-                varName = sprintf('variable%05d', i);
-                agentName = sprintf('agent%05d', i);
-                
-                obj.variable{i} = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(obj.nColors), varName);
-                obj.agent{i} = nl.coenvl.sam.agents.VariableAgent(obj.variable{i}, agentName);
-                
-                if ~isempty(obj.initSolverType)
-                    obj.agent{i}.setInitSolver(feval(obj.initSolverType, obj.agent{i}));
-                end
-                if ~isempty(obj.iterSolverType)
-                    obj.agent{i}.setIterativeSolver(feval(obj.iterSolverType, obj.agent{i}));
-                end
-            end
-        end % INITVARIABLES
-        
-        %% ASSIGNAGENTPROPERTIES
+    methods (Sealed, Access = protected)       
+         %% ASSIGNAGENTPROPERTIES
         function assignAgentProperties(obj)
             fields = fieldnames(obj.agentProps);
             nagents = numel(obj.agent);
@@ -262,51 +227,6 @@ classdef Experiment < handle
             end
         end % ASSIGNAGENTPROPERTIES
         
-        %% INITCONSTRAINTS - Add constraints to the graph
-        function initConstraints(obj)
-            for i = 1:size(obj.graph.edges,1)
-                a = obj.graph.edges(i,1);
-                b = obj.graph.edges(i,2);
-                
-                if numel(obj.constraintArgs) <= 1
-                    % Create a constraint always with same argument
-                    obj.constraint{i} = feval(obj.constraintType, obj.variable{a}, obj.variable{b}, obj.constraintArgs{:});
-                elseif numel(obj.constraintArgs) == size(edges,1)
-                    % Create a constraint for every argument
-                    obj.constraint{i} = feval(obj.constraintType, obj.variable{a}, obj.variable{b}, obj.constraintArgs{i});
-                elseif mod(numel(obj.constraintArgs), size(edges,1)) == 0
-                    error('Deprecated style of constraint argumentations!');
-                else
-                    error('DOEXPERIMENT:INCORRECTARGUMENTCOUNT', ...
-                        'Incorrect number of constraint arguments, must be 0, 1 or number of edges (%d)', ...
-                        size(edges,1));
-                end
-                
-                obj.agent{a}.addConstraint(obj.constraint{i});
-                obj.agent{b}.addConstraint(obj.constraint{i});
-            end
-            
-        end % INITCONSTRAINTS
-        
-        %% INITCONSTRAINTAGENTS - Add constraint agents (MAXSUM only)
-        function initConstraintAgents(obj)
-            functionSolverType = obj.getSolverCounterPart();
-            
-            for i = 1:size(obj.graph.edges,1)
-                a = obj.graph.edges(i,1);
-                b = obj.graph.edges(i,2);
-                
-                % Create constraint agent
-                agentName = sprintf('constraint%05d', i);
-                obj.constraintAgent{i} = nl.coenvl.sam.agents.ConstraintAgent(agentName, obj.constraint{i}, obj.variable{a}, obj.variable{b});
-                obj.constraintAgent{i}.setSolver(feval(functionSolverType, obj.constraintAgent{i}));
-                
-                % Set constraint agent address as targets
-                obj.agent{a}.addFunctionAddress(obj.constraintAgent{i}.getID());
-                obj.agent{b}.addFunctionAddress(obj.constraintAgent{i}.getID());
-            end
-        end % INITCONSTRAINTAGENT
-        
         %% RUNINITSOLVER - Run initialization part of algorithm
         function runInitSolver(obj)
             a = obj.agent{randi(obj.graph.size)};
@@ -316,17 +236,14 @@ classdef Experiment < handle
             
             cellfun(@(x) x.init(), obj.agent);
             cellfun(@(x) x.init(), obj.constraintAgent);
-            obj.pauseUntilVariablesAreSet();
+            
+            if ~isempty(obj.initSolverType)
+                obj.pauseUntilVariablesAreSet();
+            end
         end % RUNINITSOLVER
         
         %% RUNITERSOLVER - Run iterative part of algorithm
-        function runIterSolver(obj)
-            % Do the iterations
-            obj.results.costList = [];
-            obj.results.evalList = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-            obj.results.msgList = nl.coenvl.sam.MailMan.getTotalSentMessages();
-            obj.results.timeList = toc(obj.t_start);
-            
+        function runIterSolver(obj)          
             % Start iterations
             i = 0;
             bestSolution = inf;
@@ -343,10 +260,10 @@ classdef Experiment < handle
                 cellfun(@(x) x.tick(), obj.constraintAgent);
                 
                 cost = obj.getCost();
-                obj.results.costList(i) = cost;
-                obj.results.evalList(i) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-                obj.results.msgList(i) = nl.coenvl.sam.MailMan.getTotalSentMessages();
-                obj.results.timeList(i) = toc(obj.t_start);
+                obj.results.cost(i) = cost;
+                obj.results.evals(i) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
+                obj.results.msgs(i) = nl.coenvl.sam.MailMan.getTotalSentMessages();
+                obj.results.time(i) = toc(obj.t_start);
                 
                 % If a better solution is found, reset countDown
                 if cost < bestSolution
@@ -355,6 +272,8 @@ classdef Experiment < handle
                 end
             end
             fprintf(' done\n')
+            
+            obj.results.numIters = i;
             
             % The solver is not iterative, but may take a while to complete
             obj.pauseUntilVariablesAreSet();

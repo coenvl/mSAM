@@ -14,5 +14,8 @@
 %% Function Definition
 function [ size ] = graphSize( edges )
 
-%size = numel(unique(edges(:)));
-size = max(max(edges));
+if iscell(edges)
+    size = sum(cellfun(@(x) graphSize(x), edges));
+else
+    size = max(max(edges));
+end
