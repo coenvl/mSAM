@@ -14,6 +14,11 @@
 %% Function Definition
 function density = graphDensity( edges )
 
+if iscell(edges)
+    density = nan;
+    return
+end
+
 % Get the number of nodes
 n = numel(unique(edges));
 

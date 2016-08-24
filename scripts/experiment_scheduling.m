@@ -4,8 +4,8 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 20; % i.e. number of problems generated
-settings.nMaxIterations = [];
+settings.numExps = 100; % i.e. number of problems generated
+settings.nMaxIterations = 0;
 settings.nStableIterations = 200;
 settings.nagents = 50;
 settings.nmeetings = 15;
@@ -18,15 +18,12 @@ options.ncolors = uint16(settings.ncolors);
 options.graphType = @meetingSchedulingGraph;
 options.graph.nAgents = uint16(settings.nagents);
 options.graph.nMeetings = uint16(settings.nmeetings);
-% options.graph.meetingSizeFun = @(x) randi(x,varargin{:});
-% options.graph.meetingSizeFun = @(x) 2 + ((x-2) ./ ((x+1) - randi(x)));
-options.graph.meetingSizeFun = @(x) 2 + randi(x/10);
+options.graph.meetingSizeFun = @(x) 2 + randi(x/2);
 
 options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
 options.maxTime = 120;
 options.waitTime = .01;
-options.keepCostGraph = true;
 
 solvers = {};
 
@@ -109,15 +106,17 @@ for e = 1:settings.numExps
         options.agentProperties(j).preference = rand(1,settings.ncolors);
     end
     
+    exp = SchedulingExperiment(edges, options);
     for a = 1:numel(solvers)
         solvername = solvers(a).name;
-        options.initSolverType = solvers(a).initSolverType;
-        options.iterSolverType = solvers(a).iterSolverType;
+        solverfield = matlab.lang.makeValidName(solvername);
+        exp.initSolverType = solvers(a).initSolverType;
+        exp.iterSolverType = solvers(a).iterSolverType;
 
         try
             fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
-            exp = doMeetingSchedulingExperiment(edges, options);
-            fprintf('Finished in t = %0.1f seconds\n', exp.time);
+            exp.run();
+            fprintf('Finished in t = %0.1f seconds\n', exp.results.time(end));
         catch err
             warning('Timeout or error occured:');
             disp(err);
@@ -130,17 +129,16 @@ for e = 1:settings.numExps
             exp.alltimes = nan;
         end
         
-        solverfield = matlab.lang.makeValidName(solvername);
-        results.(solverfield).solver = solvers(a);
-        results.(solverfield).costs{e} = exp.allcost; 
-        results.(solverfield).evals{e} = exp.allevals;
-        results.(solverfield).msgs{e} = exp.allmsgs;
-        results.(solverfield).times{e} = exp.alltimes;
-        results.(solverfield).iterations(e) = exp.iterations;
+        results.(solverfield).costs{e} = exp.results.cost; 
+        results.(solverfield).evals{e} = exp.results.evals;
+        results.(solverfield).msgs{e} = exp.results.msgs;
+        results.(solverfield).times{e} = exp.results.time;
+        results.(solverfield).iterations(e) = exp.results.numIters;
         
         if settings.visualizeProgress
             visualizeProgress(exp, solverfield);
         end
+        exp.reset();
     end
 end
 
@@ -154,7 +152,7 @@ graphoptions = getGraphOptions();
 graphoptions.figure.number = 188;
 graphoptions.figure.height = 12;
 graphoptions.axes.yscale = 'log'; % True for most situations
-graphoptions.axes.xscale = 'linear';
+graphoptions.axes.xscale = 'log';
 graphoptions.axes.ymin = [];
 graphoptions.axes.xmax = 30;
 graphoptions.export.do = false;

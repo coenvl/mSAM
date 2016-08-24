@@ -1,9 +1,9 @@
 %% Get Default options
 options = getGraphOptions();
 options.plot.colors = cubehelix(8, .5, -1.5, 3, 1);
-options.export.do = false;
+options.export.do = true;
 options.export.format = 'eps';
-options.export.folder = 'C:\Data\Documents\PHD\ecai2016\images';
+options.export.folder = 'C:\Data\Documents\PHD\papers\aaai17\images';
 options.plot.errorbar = false;
 % options.plot.hi_error_fun = @(x) nanmean(x,2) + nanstd(x, [], 2);
 % options.plot.lo_error_fun = @(x) nanmean(x,2) - nanstd(x, [], 2);
@@ -12,56 +12,36 @@ options.plot.emphasize = {'CoCoA_UF', 'CoCoA'};
 options.label.Y = 'Solution cost';
 
 %% Graph coloring experiment
-% exp(1) = load('C:\Develop\matlab\CoCoA\data\ijcai2016\exp_LocalInequalityConstraintCostFunction_delaunayGraph_i100_d3_n200_t20160127T165702_results.mat');
-exp(1) = load('C:\Develop\matlab\CoCoA\data\exp_InequalityConstraint_delaunayGraph_i100_d3_n200_t20160410T173328_results.mat');
-exp(1).results = fixSleepyLaptop(exp(1).results);
+exp(1) = load('data\aaai17\results_graphColoring_delaunayGraph_i100_d3_n200_t20160819T172541.mat');
+% exp(1).results = fixSleepyLaptop(exp(1).results);
 options.export.name = 'graph_coloring';
 
 % Convert from cells to matrix
-% exp(1).settings.nMaxIterations = 70;
-% options.plot.range = 1:exp(1).settings.nMaxIterations;
 resultsMat = prepareResults(exp(1).results);
-resultsMat.CoCoA_UF = resultsMat.CoCoA;
-resultsMat.CoCoA = resultsMat.CoCoS;
-resultsMat = rmfield(resultsMat, 'CoCoS');
-resultsMat = rmfield(resultsMat, 'MaxSumADVP');
 
 % Create figure
 options.figure.number = 187;
-options.axes.xmax = 5;
+options.axes.xmax = 3;
 options.label.X = 'Running time (s)';
 createResultGraph(resultsMat, 'times', 'costs', options);
-% options.figure.number = 188;
-% createResultGraph(resultsMat, 'times', 'msgs', options);
-% options.figure.number = 189;
-% createResultGraph(resultsMat, 'times', 'evals', options);
 
 % Get results from best 1%
 % analyzeResults(exp(1).results);
 
 %% Game theory experiment
-% exp(2) = load('C:\Develop\matlab\CoCoA\data\ijcai2016\exp_LocalGameTheoreticCostFunction_delaunayGraph_i100_d3_n200_t20160126T151322_results.mat');
-exp(2) = load('C:\Develop\matlab\CoCoA\data\exp_CostMatrixConstraint_delaunayGraph_i100_d3_n200_t20160411T080710_results.mat');;
+exp(2) = load('data\aaai17\results_semirandom_scalefreeGraph_i100_d10_n200_t20160820T064440.mat');
 exp(2).results = fixSleepyLaptop(exp(2).results);
-options.export.name = 'game_theory';
+options.export.name = 'semirandom';
 
 % Convert from cells to matrix
-% exp(2).settings.nMaxIterations = 100;
-% options.plot.range = 1:exp(2).settings.nMaxIterations;
 resultsMat = prepareResults(exp(2).results);
-resultsMat.CoCoA_UF = resultsMat.CoCoA;
-resultsMat.CoCoA = resultsMat.CoCoS;
-resultsMat = rmfield(resultsMat, 'CoCoS');
 
 % Create figure
 options.figure.number = 190;
-options.axes.xmax = 25;
-options.label.X = 'Running time (s)';
+options.axes.xmax = 75;
+% options.axes.xscale='log';
+% options.label.X = 'Running time (s)';
 createResultGraph(resultsMat, 'times', 'costs', options);
-% options.figure.number = 191;
-% createResultGraph(resultsMat, 'times', 'msgs', options);
-% options.figure.number = 192;
-% createResultGraph(resultsMat, 'times', 'evals', options);
 % Get results from best 1%
 % analyzeResults(exp(2).results);
 

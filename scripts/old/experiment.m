@@ -1,20 +1,25 @@
-% superclear
-clear all
-clear java
-
+superclear
 rng(1, 'twister');
 
-colornames = {'red', 'green', 'cyan', 'blue', 'yellow', 'magenta'};
-options.ncolors = uint16(10);
-% options.costFunction = 'nl.coenvl.sam.costfunctions.LocalInequalityConstraintCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.LocalGameTheoreticCostFunction';
-% options.costFunction = 'nl.coenvl.sam.costfunctions.RandomCostFunction';
-options.costFunction = 'nl.coenvl.sam.costfunctions.SemiRandomCostFunction';
+colornames = {'red', 'green', 'cyan', 'blue', 'yellow', 'magenta', 'brown', 'coral', 'gold', 'black', 'azure'};
+options.ncolors = uint16(11);
 
-% options.solverType = 'nl.coenvl.sam.solvers.DSASolver';
-% options.solverType = 'nl.coenvl.sam.solvers.UniqueFirstCooperativeSolver';
-% options.solverType = 'nl.coenvl.sam.solvers.GreedyCooperativeSolver';
-% options.solverType = 'nl.coenvl.sam.solvers.GreedyLocalSolver';
+% options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
+% options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
+load('staticCosts.mat');
+options.constraint.arguments = {localCost, localCost};
+
+% options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
+% options.constraint.arguments = {1};
+makeRandomConstraintCosts = false;
+
+options.solverType = 'nl.coenvl.sam.solvers.DSASolver';
+% options.solverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+% options.solverType = 'nl.coenvl.sam.solvers.CoCoSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.ReCoCoSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.ReCoCoMGMSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.GreedySolver';
 % options.solverType = 'nl.coenvl.sam.solvers.TickCFLSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.FBSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MGMSolver';
@@ -23,21 +28,32 @@ options.costFunction = 'nl.coenvl.sam.costfunctions.SemiRandomCostFunction';
 % options.solverType = 'nl.coenvl.sam.solvers.ACLSSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 % options.solverType = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
-options.solverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+% options.solverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 
-options.graph.nAgents = uint16(50);
+options.graph.nAgents = uint16(3);
 options.graphType = @delaunayGraph;
 options.graph.sampleMethod = 'poisson';
 % options.graphType = @scalefreeGraph;
+% options.graph.maxLinks = uint16(4);
+% options.graph.initialsize = uint16(10);
+
 % options.graphType = @randomGraph;
 % options.graph.density = .2;
 
+% options.graphType = @nGridGraph;
+% options.graph.nDims = uint16(3);
+% options.graph.doWrap = '';
+
 % options.nStableIterations = uint16(100);
-options.nMaxIterations = uint16(1400);
+options.nMaxIterations = uint16(100);
 options.keepCostGraph = true;
 
 % Do the experiment
 edges = feval(options.graphType, options.graph);
+if makeRandomConstraintCosts
+    constraintCosts = randi(10, options.ncolors, options.ncolors, numel(edges));
+    options.constraint.arguments = arrayfun(@(x) constraintCosts(:,:,x), 1:numel(edges), 'UniformOutput', false);
+end
 experimentResult = doExperiment(edges, options);
 
 % plot(experimentResult.allcost)
@@ -48,20 +64,21 @@ experimentResult = doExperiment(edges, options);
 fprintf('\nExperiment results:\n');
 fprintf('\tFound cost: %d\n', experimentResult.cost);
 fprintf('\tNumber of iterations: %d\n', experimentResult.iterations);
+fprintf('\tTime to complete: %1.5f\n', experimentResult.time);
 fprintf('\tFunction evals: %d\n', experimentResult.evals);
 fprintf('\tNumber of msgs: %d\n', experimentResult.msgs);
 fprintf('\tSolver type: %s\n', class(experimentResult.vars.solver(1)));
-fprintf('\tCost function: %s\n', class(experimentResult.vars.costfun(1)));
+% fprintf('\tCost function: %s\n', class(experimentResult.vars.costfun(1)));
 fprintf('\tGraph type: %s\n', func2str(options.graphType));
 fprintf('\t\t- size: %d\n', experimentResult.graph.nAgents);
 fprintf('\t\t- density: %1.5f\n', experimentResult.graph.density);
 
-figure(187)
-if isfield(experimentResult, 'allcost')
+if isfield(experimentResult, 'allcost') && numel(experimentResult.allcost) > 1
+    figure(187)
     plot(experimentResult.allcost)
 end
 
-return
+% return
 %% Create pretty graph (not required)
 
 fid = fopen('test.gv', 'w');

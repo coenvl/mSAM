@@ -21,21 +21,6 @@ classdef (Abstract) Experiment < handle
         
         % The type of solver to use for iteration
         iterSolverType@char matrix;
-    end
-    
-    %% Final protected properties (settings)
-    properties (SetAccess = immutable, GetAccess = protected)
-        % The type of constraints to use between variables
-        constraintType@char matrix;
-        
-        % Arguments to initialize the constraints with
-        constraintArgs@cell;
-        
-        % Properties to provide to the agents
-        agentProps@struct scalar;
-        
-        % Number of colors (domain size)
-        nColors@uint16 scalar;
         
         % The number of iterations that the algorithm is allowed to improve
         % on its last best result. A value of zero indicates no limit
@@ -51,6 +36,21 @@ classdef (Abstract) Experiment < handle
         % The delay between checks to see if the algorithm has converged
         % for non-iterative solvers
         waittime@double scalar;
+    end
+    
+    %% Final protected properties (settings)
+    properties (SetAccess = immutable, GetAccess = protected)
+        % The type of constraints to use between variables
+        constraintType@char matrix;
+        
+        % Arguments to initialize the constraints with
+        constraintArgs@cell;
+        
+        % Properties to provide to the agents
+        agentProps@struct;
+        
+        % Number of colors (domain size)
+        nColors@uint16 scalar;
     end
     
     %% Publicly obtainable properties
@@ -126,6 +126,7 @@ classdef (Abstract) Experiment < handle
             if ~isempty(obj.iterSolverType)
                 obj.runIterSolver();
             else
+                obj.pauseUntilVariablesAreSet();
                 obj.results.time = toc(obj.t_start); 
                 obj.results.numIters = 1;
                 obj.results.cost = obj.getCost();
@@ -138,7 +139,12 @@ classdef (Abstract) Experiment < handle
         function reset(obj)
             obj.results = struct();
             cellfun(@(x) x.reset(), obj.agent);
+            cellfun(@(x) x.reset(), obj.constraintAgent);
             cellfun(@(x) x.clear(), obj.variable);
+            obj.agent = {};
+            obj.constraintAgent = {};
+            obj.variable = {};
+            obj.constraint = {};
             nl.coenvl.sam.ExperimentControl.ResetExperiment();
         end % RESET
         
@@ -150,12 +156,14 @@ classdef (Abstract) Experiment < handle
         
         %% SETINITSOLVERTYPE
         function set.initSolverType(obj, type)
+            fprintf('Updating initialization solver to %s\n', type);
             obj.initSolverType = type;
             obj.reset();
         end % SETINITSOLVERTYPE
         
         %% SETITERSOLVERTYPE
         function set.iterSolverType(obj, type)
+            fprintf('Updating iterative solver to %s\n', type);
             obj.iterSolverType = type;
             obj.reset();
         end % SETITERSOLVERTYPE
@@ -169,7 +177,8 @@ classdef (Abstract) Experiment < handle
     methods (Sealed, Access = protected)
         %% PAUSEUNTILVARIABLESARESET
         function pauseUntilVariablesAreSet(obj)
-            while toc(obj.t_start) < obj.maxtime
+            t_puvas = tic;
+            while toc(t_puvas) < obj.maxtime
                 if all(cellfun(@(x) x.isSet(), obj.variable));
                     return
                 else
@@ -229,7 +238,7 @@ classdef (Abstract) Experiment < handle
         
         %% RUNINITSOLVER - Run initialization part of algorithm
         function runInitSolver(obj)
-            a = obj.agent{randi(obj.graph.size)};
+            a = obj.agent{randi(numel(obj.agent))};
             a.set(nl.coenvl.sam.solvers.CoCoSolver.ROOTNAME_PROPERTY, true);
             
             obj.t_start = tic; % start the clock
@@ -254,6 +263,9 @@ classdef (Abstract) Experiment < handle
                 i = i + 1;
                 if mod(i, 25) == 0
                     fprintf(' %d', i);
+                end
+                if mod(i, 500) == 0
+                    fprintf('\n');
                 end
                 
                 cellfun(@(x) x.tick(), obj.agent);
