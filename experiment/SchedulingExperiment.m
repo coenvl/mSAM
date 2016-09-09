@@ -73,7 +73,7 @@ classdef SchedulingExperiment < Experiment
         % to have it.
         function initEqConstraints(obj)
             peqc = 'nl.coenvl.sam.constraints.PreferentialEqualityConstraint';
-            constraintCost = 1e9;
+            constraintCost = 1e3;
             
             idx = 0;
             % First add constraints within meetings

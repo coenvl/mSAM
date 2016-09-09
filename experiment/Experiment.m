@@ -171,6 +171,9 @@ classdef (Abstract) Experiment < handle
     end
     
     methods (Abstract)
+        % This function should set the variable, agent, constraintAgent and
+        % constraint properties of the experiment into 1xN cell arrays in
+        % order to run the experiment.
         init(obj);
     end
     

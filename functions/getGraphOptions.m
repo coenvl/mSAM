@@ -19,12 +19,12 @@ font_scale_factor = 1;
 
 % Figure options, do big image and have latex resize it. Looks nicer
 options.figure.units = 'centimeters';
-options.figure.width = scale_factor * 16;
-options.figure.height = scale_factor * 8;
+options.figure.width = scale_factor * 20;
+options.figure.height = scale_factor * 7;
 
 % Label options
 options.label.font = 'times';
-options.label.fontsize = font_scale_factor * 16;
+options.label.fontsize = font_scale_factor * 20;
 
 % Legend options
 options.legend.font = 'times';

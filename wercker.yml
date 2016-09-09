@@ -1,0 +1,12 @@
+deploy:
+  box: coenvl/alpine-git
+  steps:
+    - add-to-known_hosts:
+        hostname: github.com
+        fingerprint: SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
+    - add-ssh-key:
+        keyname: anonymous_github
+    - script:
+        name: Run anonymization script
+        code: |
+          ./anonymyze.sh

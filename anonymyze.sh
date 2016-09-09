@@ -1,7 +1,6 @@
 #!/bin/bash
-
-DST="../CoCoAnon"
-GIT="anonymousgit:anonc187/mCoCoA.git"
+DST="anonymous"
+GIT="git@github.com:anonc187/mCoCoA.git"
 
 if [ -e "$DST" ]; then
 	echo "Target folder $DST already exists"
@@ -18,15 +17,12 @@ rm -rf $DST/*
 
 echo "Copying working folder to $DST"
 # Copy current working files
+cp -r experiment $DST/.
 cp -r functions $DST/.
+cp -r lib $DST/.
 cp -r scripts $DST/.
 cp startup.m $DST/.
 cp README.md $DST/.
-
-mkdir $DST/lib
-for f in `ls lib/*.jar`; do
-    cp $f $DST/`echo $f | sed 's/nl.coenvl.sam/org.anon.cocoa/g'`
-done
 
 echo "Anonymizing $DST"
 for f in `find $DST -name '*.m'` $DST/README.md; do
@@ -41,7 +37,7 @@ for f in `find $DST -name '*.m'` $DST/README.md; do
 done
 
 echo "Sending commits"
-cd $DST
-git add *
-git commit -m `date +%Y-%m-%d`
-git push origin master
+git -C add *
+git -C commit -m `date +%Y-%m-%d`
+git -C push origin master
+

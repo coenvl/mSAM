@@ -35,9 +35,9 @@ for i = 1:numel(algos)
         iterStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.iterations]));
     end
     
-    costStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.costs] / 1000));
-    msgsStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.msgs] / 1000));
-    evalStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.evals] / 1000));
+    costStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.costs]));
+    msgsStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.msgs]));
+    evalStr = sprintf(repmat('&% -7d ', 1, numel(algoResults)), round([algoResults.evals]));
     timeStr = sprintf(repmat('&% -6.1f ', 1, numel(algoResults)), [algoResults.times]);
     algoStr{i} = sprintf('% -32s %s %s %s %s %s', strrep(algos{i}, '_', '\_'), iterStr, costStr, msgsStr, evalStr, timeStr);
 end

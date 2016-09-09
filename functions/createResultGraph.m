@@ -67,7 +67,9 @@ minortick = getSubOption('on', 'char', plotOptions, 'axes', 'minortick');
 
 yscale = getSubOption('linear', 'char', plotOptions, 'axes', 'yscale');
 yminval = getSubOption([], 'double', plotOptions, 'axes', 'ymin');
+ymaxval = getSubOption([], 'double', plotOptions, 'axes', 'ymax');
 xscale = getSubOption('linear', 'char', plotOptions, 'axes', 'xscale');
+xmin = getSubOption([], 'double', plotOptions, 'axes', 'xmin');
 xmax = getSubOption([], 'double', plotOptions, 'axes', 'xmax');
 
 labelfont = getSubOption('times', 'char', plotOptions, 'label', 'font');
@@ -98,7 +100,7 @@ set(fig, 'Units', figunits, 'Position', [3 3 figwidth figheight], ...
 
 ax = cla;
 hold(ax, 'on');
-
+ymax = [];
 for i = 1:numel(algos)
     y = yfun(results.(algos{i}).(y_field));
     x = xfun(results.(algos{i}).(x_field));
@@ -128,21 +130,24 @@ for i = 1:numel(algos)
     if strcmp(algos{i}, myalgo); lw = 1.5 * lw; end
     plot(ax, x, y, styles{mod(i-1, numel(styles))+1}, ...
         'linewidth', lw, 'color', colors(mod(i-1, size(colors,1))+1,:), style{:});
-end
-hl = legend(ax, algos{:}, 'Location', 'NorthWest');
-
-ymax = max(get(ax, 'YLim'));
-if isempty(yminval); yminval = min(get(ax, 'YLim')); end
-
-if (do_errorbar)
-    for i = 1:numel(algos)
-        d = results.(algos{i}).(y_field);
-                
-        addErrorBar(ax, x, yfun(d), lo_fun(d), hi_fun(d), ...
+    
+    if (do_errorbar)
+        lo = lo_fun(results.(algos{i}).(y_field));
+        hi = hi_fun(results.(algos{i}).(y_field));  
+        addErrorBar(ax, x, y, lo, hi, 10, ...
             'linewidth', errorlinewidth, 'color', colors(mod(i-1, size(colors,1))+1,:));
-        ymax = max([ymax; hi_fun(d)]);
+        ymax = max([ymax; hi]);
     end
 end
+    
+hl = legend(ax, algos{:}, 'Location', 'NorthWest');
+
+ymax = max([ymax get(ax, 'YLim')]);
+if ~isempty(ymaxval); ymax = ymaxval; end
+if isempty(yminval); yminval = min(get(ax, 'YLim')); end
+
+if isempty(xmin); xmin = min(get(ax, 'XLim')); end
+if isempty(xmax); xmax = max(get(ax, 'XLim')); end
 
 %% calculate where the ticks should go
 
@@ -165,12 +170,8 @@ set(ax, 'fontsize', axessize, 'fontname', axesfont, 'linewidth', axeslinewidth, 
     'YMinorGrid', minorgrid, 'YMinorTick', minortick, ...
     'XMinorGrid', minorgrid, 'XMinorTick', minortick, ...
     'Box', axesbox, 'YGrid', axesgrid, 'XGrid', axesgrid, ... 
-    'YScale', yscale,  'XScale', xscale, ... % 'XLim', [min(x) max(x)], ...
+    'YScale', yscale,  'XScale', xscale, 'XLim', [xmin xmax], ...
     'YLim', [yminval ymax]);%, 'YTick', ytick); %max(get(ax, 'YLim'))]);
-
-if ~isempty(xmax)
-    xlim(ax, [0 xmax]);
-end
 
 yax = get(ax, 'YAxis');
 set(yax, 'Exponent', floor(log10(ymax)));
@@ -191,7 +192,13 @@ end
 
 end
 
-function addErrorBar(ax,x,y,l,u,varargin)
+function addErrorBar(ax,x,y,l,u,n,varargin)
+
+sample = 1:n:numel(x);
+x = x(sample);
+y = y(sample);
+l = l(sample);
+u = u(sample);
 
 npt = numel(x);
 tee = (max(x(:))-min(x(:)))/100;  % make tee .02 x-distance for error bars

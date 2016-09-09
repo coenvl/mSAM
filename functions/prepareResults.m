@@ -35,7 +35,9 @@ end
 end
 
 function mat = concatResults(data, range)
-    if numel(data) == 1
+    if numel(data) == 0
+        mat = nan(numel(range, 1));
+    elseif numel(data) == 1
         mat = data;
     elseif numel(data) >= numel(range)
         mat = data(range)';
