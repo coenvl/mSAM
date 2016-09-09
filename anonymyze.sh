@@ -37,7 +37,7 @@ for f in `find $DST -name '*.m'` $DST/README.md; do
 done
 
 echo "Sending commits"
-git -C $DST add *
+git -C $DST add -A
 git -C $DST commit -m `date +%Y-%m-%d`
 git -C $DST push origin master
 
