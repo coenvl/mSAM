@@ -1,6 +1,9 @@
 realdata
+data
 html
 archive
+tests
+lib/*.jar
 
 *.asv
 *.xml
