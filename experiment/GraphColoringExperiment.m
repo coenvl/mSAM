@@ -37,8 +37,8 @@ classdef GraphColoringExperiment < Experiment
 
     end
     
-    %% Private methods
-    methods (Access = private)
+    %% Protected methods
+    methods (Access = protected)
 
         %% INITVARIABLES - Initialize variables and agents
         function initVariables(obj)
@@ -95,7 +95,7 @@ classdef GraphColoringExperiment < Experiment
                 
                 % Create constraint agent
                 agentName = sprintf('constraint%05d', i);
-                obj.constraintAgent{i} = nl.coenvl.sam.agents.ConstraintAgent(agentName, obj.constraint{i}, obj.variable{a}, obj.variable{b});
+                obj.constraintAgent{i} = nl.coenvl.sam.agents.BinaryConstraintAgent(agentName, obj.constraint{i}, obj.variable{a}, obj.variable{b});
                 obj.constraintAgent{i}.setSolver(feval(functionSolverType, obj.constraintAgent{i}));
                 
                 % Set constraint agent address as targets

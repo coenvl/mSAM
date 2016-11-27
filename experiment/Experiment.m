@@ -101,11 +101,11 @@ classdef (Abstract) Experiment < handle
             assert(~isempty(obj.initSolverType) || ~isempty(obj.iterSolverType), ...
                 'EXPERIMENT:INIT:NOSOLVERTYPE', ...
                 'Either set initSolverType, iterSolverType or both');
-            assert(isGraph(edges), 'EXPERIMENT:INITGRAPH:INVALIDGRAPH', ...
-                'Input must be a Nx2 matrix of connected nodes');
-            assert(graphIsConnected(edges), ...
-                'EXPERIMENT:INITGRAPH:NOTCONNECTED', ...
-                'Graph must be connected');
+%             assert(isGraph(edges), 'EXPERIMENT:INITGRAPH:INVALIDGRAPH', ...
+%                 'Input must be a Nx2 matrix of connected nodes');
+%             assert(graphIsConnected(edges), ...
+%                 'EXPERIMENT:INITGRAPH:NOTCONNECTED', ...
+%                 'Graph must be connected');
             
             % Make sure all referenced java objects are cleared
             obj.reset();
@@ -119,9 +119,10 @@ classdef (Abstract) Experiment < handle
         %% RUN - Run the experiment
         function run(obj)
             % Run implementation specific initialization           
-            obj.init();
-            
-            obj.runInitSolver();
+            if isempty(obj.agent)
+                obj.init();
+                obj.runInitSolver();
+            end
             
             if ~isempty(obj.iterSolverType)
                 obj.runIterSolver();
@@ -135,9 +136,25 @@ classdef (Abstract) Experiment < handle
             end
         end % RUN
         
+        %% RUNI - Run the simulation for given number of iterations
+        function runI(obj, numIters)
+            ExceptOn(isempty(obj.iterSolverType), ...
+                'EXPERIMENT:RUNI:NOITERSOLVER', ...
+                'Cannot use this method without iterative solver');
+            
+            if isempty(obj.agent)
+                obj.init();
+                obj.runInitSolver();
+            end
+            
+            for i = 1:numIters
+                obj.tick();
+            end
+        end % RUN
+        
         %% RESET - Resets the experiment so it can be run again
         function reset(obj)
-            obj.results = struct();
+            obj.results = struct('numIters', 0);
             cellfun(@(x) x.reset(), obj.agent);
             cellfun(@(x) x.reset(), obj.constraintAgent);
             cellfun(@(x) x.clear(), obj.variable);
@@ -195,10 +212,10 @@ classdef (Abstract) Experiment < handle
         end % PAUSEUNTILVARIABLESARESET
         
         %% DOSTOP - Decide if the experiment should stop
-        function bool = doStop(obj, numIters, countDown)
+        function bool = doStop(obj, countDown)
             bool = false;
             % First decide based on MAX number of iterations
-            if (obj.nMaxIterations > 0) && (numIters >= obj.nMaxIterations)
+            if (obj.nMaxIterations > 0) && (obj.results.numIters >= obj.nMaxIterations)
                 bool = true;
             end
             
@@ -207,7 +224,9 @@ classdef (Abstract) Experiment < handle
                 bool = true;
             end
         end % DOSTOP
-        
+    end
+    
+    methods (Sealed)
         %% GETCOST - Obtain current experiment cost
         function cost = getCost(obj)
             cost = sum(cellfun(@(x) x.getExternalCost(), obj.constraint));
@@ -257,28 +276,12 @@ classdef (Abstract) Experiment < handle
         %% RUNITERSOLVER - Run iterative part of algorithm
         function runIterSolver(obj)          
             % Start iterations
-            i = 0;
             bestSolution = inf;
             countDown = obj.nStableIterations;
-            fprintf('Iteration: ');
-            while ~obj.doStop(i, countDown)
+            %fprintf('Iteration: ');
+            while ~obj.doStop(countDown)
                 countDown = countDown - 1;
-                i = i + 1;
-                if mod(i, 25) == 0
-                    fprintf(' %d', i);
-                end
-                if mod(i, 500) == 0
-                    fprintf('\n');
-                end
-                
-                cellfun(@(x) x.tick(), obj.agent);
-                cellfun(@(x) x.tick(), obj.constraintAgent);
-                
-                cost = obj.getCost();
-                obj.results.cost(i) = cost;
-                obj.results.evals(i) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
-                obj.results.msgs(i) = nl.coenvl.sam.MailMan.getTotalSentMessages();
-                obj.results.time(i) = toc(obj.t_start);
+                cost = obj.tick();
                 
                 % If a better solution is found, reset countDown
                 if cost < bestSolution
@@ -286,12 +289,36 @@ classdef (Abstract) Experiment < handle
                     bestSolution = cost;
                 end
             end
-            fprintf(' done\n')
-            
-            obj.results.numIters = i;
+            %fprintf(' done\n')
             
             % The solver is not iterative, but may take a while to complete
             obj.pauseUntilVariablesAreSet();
         end % RUNITERSOLVER
+        
+        %% TICK - Do one iteration
+        function cost = tick(obj)
+            % Get the number of *this* iteration
+            i = obj.results.numIters + 1;
+            obj.results.numIters = i;
+            
+            % Display the progress
+            if mod(i, 25) == 0
+                fprintf(' %d', i);
+            end
+            if mod(i, 500) == 0
+                fprintf('\n');
+            end
+
+            % Do the actual iteration
+            cellfun(@(x) x.tick(), obj.agent);
+            cellfun(@(x) x.tick(), obj.constraintAgent);
+
+            % Store the intermediate results
+            cost = obj.getCost();
+            obj.results.cost(i) = cost;
+            obj.results.evals(i) = nl.coenvl.sam.ExperimentControl.getNumberEvals();
+            obj.results.msgs(i) = nl.coenvl.sam.MailMan.getTotalSentMessages();
+            obj.results.time(i) = toc(obj.t_start);
+        end % TICK
     end % Protected methods
 end

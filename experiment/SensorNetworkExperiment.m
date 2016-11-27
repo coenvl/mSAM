@@ -103,7 +103,7 @@ classdef SensorNetworkExperiment < Experiment
                 
                 % Create constraint agent
                 agentName = sprintf('constraint%05d', i);
-                obj.constraintAgent{i} = nl.coenvl.sam.agents.ConstraintAgent(agentName, obj.constraint{i}, obj.variable{a}, obj.variable{b});
+                obj.constraintAgent{i} = nl.coenvl.sam.agents.BinaryConstraintAgent(agentName, obj.constraint{i}, obj.variable{a}, obj.variable{b});
                 obj.constraintAgent{i}.setSolver(feval(functionSolverType, obj.constraintAgent{i}));
                 
                 % Set constraint agent address as targets
@@ -131,7 +131,7 @@ classdef SensorNetworkExperiment < Experiment
             for i = 1:obj.graph.size                
                 % Create constraint agent
                 agentName = sprintf('lifetimeConstraint%05d', i);
-                obj.batteryConstraintAgent{i} = nl.coenvl.sam.agents.ConstraintAgent(agentName, obj.batteryConstraint{i}, obj.variable{i}, obj.batteryVar{i});
+                obj.batteryConstraintAgent{i} = nl.coenvl.sam.agents.BinaryConstraintAgent(agentName, obj.batteryConstraint{i}, obj.variable{i}, obj.batteryVar{i});
                 obj.batteryConstraintAgent{i}.setSolver(feval(functionSolverType, obj.batteryConstraintAgent{i}));
                 
                 % Set constraint agent address as targets

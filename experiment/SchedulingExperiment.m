@@ -94,7 +94,7 @@ classdef SchedulingExperiment < Experiment
             
                         % Create constraint agent
                         agentName = sprintf('constraint%05d', i);
-                        obj.constraintAgent{idx} = nl.coenvl.sam.agents.ConstraintAgent(agentName, obj.constraint{idx}, obj.variable{m,a}, obj.variable{m,b});
+                        obj.constraintAgent{idx} = nl.coenvl.sam.agents.BinaryConstraintAgent(agentName, obj.constraint{idx}, obj.variable{m,a}, obj.variable{m,b});
                         obj.constraintAgent{idx}.setSolver(feval(functionSolverType, obj.constraintAgent{idx}));
                         
                         % Set constraint agent address as targets
@@ -132,7 +132,7 @@ classdef SchedulingExperiment < Experiment
                                     functionSolverType = getSolverCounterPart(obj.iterSolverType);
                                     
                                     agentName = sprintf('constraint%05d', idx);
-                                    obj.constraintAgent{idx} = nl.coenvl.sam.agents.ConstraintAgent(agentName, obj.constraint{idx}, obj.variable{m1,a}, obj.variable{m2,a});
+                                    obj.constraintAgent{idx} = nl.coenvl.sam.agents.BinaryConstraintAgent(agentName, obj.constraint{idx}, obj.variable{m1,a}, obj.variable{m2,a});
                                     obj.constraintAgent{idx}.setSolver(feval(functionSolverType, obj.constraintAgent{idx}));
                                     
                                     % Set constraint agent address as targets

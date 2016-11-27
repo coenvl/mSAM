@@ -11,7 +11,7 @@ settings.nagents = 50;
 settings.nmeetings = 10;
 settings.ncolors = 20; % i.e. timeslots
 settings.visualizeProgress = true;
-settings.series = 'aaai17';
+settings.series = 'ijcai17';
 
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);
@@ -25,64 +25,7 @@ options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
 
 %% Solvers
-solvers = {};
-
-solvers(end+1).name = 'CoCoA';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoSolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'CoCoA_UF';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'ACLS';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-% solvers(end+1).name = 'CoCoA - ACLS';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-% solvers(end+1).name = 'CoCoA - ACLSUB';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
-
-solvers(end+1).name = 'DSA';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
-
-% solvers(end+1).name = 'CoCoA - DSA';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
-
-solvers(end+1).name = 'MCSMGM';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-% solvers(end+1).name = 'CoCoA - MCSMGM';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-solvers(end+1).name = 'MGM2';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-% solvers(end+1).name = 'CoCoA - MGM2';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-solvers(end+1).name = 'Max-Sum';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumVariableSolver';
-
-% solvers(end+1).name = 'Max-Sum_ADVP';
-% solvers(end).initSolverType = '';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
-
-% solvers(end+1).name = 'CoCoA - Max-Sum_ADVP';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
-
+solvers = getExperimentSolvers(settings.series);
 
 %%
 for e = 1:settings.numExps

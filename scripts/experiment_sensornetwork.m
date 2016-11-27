@@ -40,60 +40,8 @@ options.graph.nAgents = uint16(settings.nagents);
 options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
 
-%%
-solvers = {};
-
-solvers(end+1).name = 'CoCoA';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoSolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'CoCoA_UF';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'ACLS';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-% solvers(end+1).name = 'CoCoA - ACLS';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-% solvers(end+1).name = 'CoCoA - ACLSUB';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
-
-solvers(end+1).name = 'DSA';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
-
-% solvers(end+1).name = 'CoCoA - DSA';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
-
-solvers(end+1).name = 'MCSMGM';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-% solvers(end+1).name = 'CoCoA - MCSMGM';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-solvers(end+1).name = 'MGM2';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-% solvers(end+1).name = 'CoCoA - MGM2';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-solvers(end+1).name = 'Max-Sum';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
-
-% solvers(end+1).name = 'CoCoA - Max-Sum_ADVP';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+%% Solvers
+solvers = getExperimentSolvers(settings.series);
 
 %% Do the experiment
 for e = 1:settings.numExps
@@ -109,18 +57,7 @@ for e = 1:settings.numExps
         
         try
             fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
-            
-            % Speed up to avoid having to run ALL solvers for so long
-%             if ~isempty(strfind('Max-Sum', solvername))
-%                 fprintf('Providing extra time for %s\n', solvername);
-%                 exp.nStableIterations = 5 * uint16(settings.nStableIterations);
-%             elseif ~isempty(strfind('MCSMGM', solvername))
-%                 fprintf('Providing extra time for %s\n', solvername);
-%                 exp.nStableIterations = 2.5 * uint16(settings.nStableIterations);
-%             else
-%                 exp.nStableIterations = uint16(settings.nStableIterations);
-%             end
-%             
+
             exp.run();
             fprintf('Finished in t = %0.1f seconds\n\n', exp.results.time(end));
             

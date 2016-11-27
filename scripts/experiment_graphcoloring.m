@@ -7,7 +7,7 @@ warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 settings.numExps = 100; % i.e. number of problems generated
 settings.nMaxIterations = 0;
 settings.nStableIterations = 100;
-settings.nagents = 200;
+settings.nagents = 500;
 settings.ncolors = 3;
 settings.visualizeProgress = true;
 settings.graphType = @delaunayGraph;
@@ -37,60 +37,12 @@ options.graph.nAgents = uint16(settings.nagents);
 options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
 
-%%
-solvers = {};
+%% Solvers
+solvers = getExperimentSolvers(settings.series);
 
-solvers(end+1).name = 'CoCoA';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoSolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'CoCoA_UF';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'ACLS';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-% solvers(end+1).name = 'CoCoA - ACLS';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-% solvers(end+1).name = 'CoCoA - ACLSUB';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
-
-solvers(end+1).name = 'DSA';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
-
-% solvers(end+1).name = 'CoCoA - DSA';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
-
-solvers(end+1).name = 'MCSMGM';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-% solvers(end+1).name = 'CoCoA - MCSMGM';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-solvers(end+1).name = 'MGM2';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-% solvers(end+1).name = 'CoCoA - MGM2';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-
-% solvers(end+1).name = 'Max-Sum_ADVP';
-% solvers(end).initSolverType = '';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
-
-% solvers(end+1).name = 'CoCoA - Max-Sum_ADVP';
-% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+% Take out max-sum, it is no use for coloring problems
+k = arrayfun(@(x) isempty(strfind(x.name, 'Max-Sum')), solvers);
+solvers = solvers(k);
 
 %% Do the experiment
 for e = 1:settings.numExps
@@ -104,7 +56,7 @@ for e = 1:settings.numExps
         exp.initSolverType = solvers(a).initSolverType;
         exp.iterSolverType = solvers(a).iterSolverType; 
         
-        try
+%         try
             fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
             
             exp.run();
@@ -119,10 +71,10 @@ for e = 1:settings.numExps
             if settings.visualizeProgress
                 visualizeProgress(exp, solverfield);
             end
-        catch err
-            warning('Timeout or error occured:');
-            disp(err);
-        end
+%         catch err
+%             warning('Timeout or error occured:');
+%             disp(err);
+%         end
     end
 end
 
@@ -134,8 +86,8 @@ save(fullfile('data', settings.series, filename), 'settings', 'options', 'solver
 
 graphoptions = getGraphOptions();
 graphoptions.axes.yscale = 'linear'; % True for most situations
-% graphoptions.axes.ymin = 0;
-graphoptions.axes.xmax = 2;
+graphoptions.axes.ymin = .4;
+graphoptions.axes.xmax = 15;
 % graphoptions.export.do = false;
 % graphoptions.export.name = expname;
 graphoptions.label.Y = 'Solution Cost';

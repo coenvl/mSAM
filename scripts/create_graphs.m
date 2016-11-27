@@ -15,7 +15,7 @@ options.label.Y = 'Solution cost';
 options.label.X = 'Running time (s)';
 
 %% Graph coloring experiment
-exp(1) = load('data\aaai17\results_graphColoring_delaunayGraph_i100_d3_n200_t20160819T172541.mat');
+exp(1) = load('data\aaai17\results_graphColoring_delaunayGraph_i100_d3_n500_t20161118T175401.mat');
 % exp(1).results = fixSleepyLaptop(exp(1).results);
 options.export.name = 'graph_coloring';
 
@@ -24,8 +24,8 @@ resultsMat = prepareResults(exp(1).results);
 
 % Create figure
 options.figure.number = 187;
-options.axes.xmax = 3;
-options.axes.ymin = 50;
+options.axes.xmax = 7;
+options.axes.ymin = 100;
 createResultGraph(resultsMat, 'times', 'costs', options);
 createResultTable(exp(1).results);
 %% Semirandom experiment
