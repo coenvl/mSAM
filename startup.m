@@ -7,9 +7,10 @@ rootpath = fileparts(mfilename('fullpath'));
 addpath(rootpath);
 addpath(fullfile(rootpath, 'experiment'));
 addpath(fullfile(rootpath, 'functions'));
-addpath(fullfile(rootpath, 'functions', 'util'));
 addpath(fullfile(rootpath, 'functions', 'BA'));
+addpath(fullfile(rootpath, 'functions', 'export_fig'));
 addpath(fullfile(rootpath, 'functions', 'graph'));
+addpath(fullfile(rootpath, 'functions', 'util'));
 addpath(fullfile(rootpath, 'scripts'));
 
 % Check if there is a live java build
@@ -19,7 +20,7 @@ if (exist(javapath, 'dir'))
     javaaddpath(javapath)
 else
     % Add the library
-    javalib = fullfile(rootpath, 'lib', 'jCoCoA.jar');
+    javalib = fullfile(rootpath, 'lib', 'jSAM.jar');
     javaaddpath(javalib);
 end
 

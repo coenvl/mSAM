@@ -24,7 +24,7 @@ if nargin > 0 && ~isempty(series)
         case 'wpt'
             idx = 13;
         case 'hybrid+'
-            idx = 16:22;
+            idx = [3 5 7 9 11 16:35];
         otherwise
             error('Unknown series %s', series);
     end
@@ -90,33 +90,85 @@ solvers(15).name = 'CoCoA - Max-Sum_ADVP';
 solvers(15).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 solvers(15).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 
-solvers(16).name = 'MGM2_DSA';
-solvers(16).initSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
-solvers(16).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(16).name = 'ACLS_ACLSUB';
+solvers(16).initSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+solvers(16).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
 
 solvers(17).name = 'ACLS_DSA';
 solvers(17).initSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
 solvers(17).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
 
-solvers(18).name = 'DSA_MGM2';
-solvers(18).initSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(18).name = 'ACLS_MGM2';
+solvers(18).initSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
 solvers(18).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
 
-solvers(19).name = 'DSA_MCSMGM';
-solvers(19).initSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(19).name = 'ACLS_MCSMGM';
+solvers(19).initSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
 solvers(19).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
 
-solvers(20).name = 'MCSMGM_DSA';
-solvers(20).initSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-solvers(20).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(20).name = 'ACLSUB_ACLS';
+solvers(20).initSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+solvers(20).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
 
-solvers(21).name = 'ACLS_MCSMGM';
-solvers(21).initSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-solvers(21).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+solvers(21).name = 'ACLSUB_DSA';
+solvers(21).initSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+solvers(21).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
 
-solvers(22).name = 'MCSMGM_ACLS';
-solvers(22).initSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-solvers(22).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+solvers(22).name = 'ACLSUB_MGM2';
+solvers(22).initSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+solvers(22).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+
+solvers(23).name = 'ACLSUB_MCSMGM';
+solvers(23).initSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+solvers(23).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+
+solvers(24).name = 'DSA_ACLS';
+solvers(24).initSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(24).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+
+solvers(25).name = 'DSA_ACLSUB';
+solvers(25).initSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(25).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+
+solvers(26).name = 'DSA_MGM2';
+solvers(26).initSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(26).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+
+solvers(27).name = 'DSA_MCSMGM';
+solvers(27).initSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+solvers(27).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+
+solvers(28).name = 'MGM2_ACLS';
+solvers(28).initSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+solvers(28).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+
+solvers(29).name = 'MGM2_ACLSUB';
+solvers(29).initSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+solvers(29).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+
+solvers(30).name = 'MGM2_DSA';
+solvers(30).initSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+solvers(30).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+
+solvers(31).name = 'MGM2_MCSMGM';
+solvers(31).initSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+solvers(31).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+
+solvers(32).name = 'MCSMGM_ACLS';
+solvers(32).initSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+solvers(32).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+
+solvers(33).name = 'MCSMGM_ACLSUB';
+solvers(33).initSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+solvers(33).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+
+solvers(34).name = 'MCSMGM_DSA';
+solvers(34).initSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+solvers(34).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
+
+solvers(35).name = 'MCSMGM_MGM2';
+solvers(35).initSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+solvers(35).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
 
 %% Select based on series
 if exist('idx', 'var')

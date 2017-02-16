@@ -12,7 +12,7 @@
 %
 
 %% Function Definition
-function varargout = createResultTable(exp)
+function varargout = createResultTable(exp, options)
 
 if numel(exp) == 1
     exp = struct('results', exp);
@@ -44,8 +44,20 @@ end
 
 str = [header sprintf('\n\t%s \\\\', algoStr{:}) sprintf(' \\bottomrule\n\\end{tabular}')];
 
+if (nargin > 1 && isstruct(options))
+    doExport = getSubOption(false, 'logical', options, 'export', 'do');
+    outputfolder = getSubOption(pwd, 'char', options, 'export', 'tables');
+    expname = getSubOption('experiment', 'char', options, 'export', 'name');
+    
+    if doExport
+        fid = fopen(fullfile(outputfolder, sprintf('%s.tex', expname)), 'w');
+        fprintf(fid, '%s\n', str);
+        fclose(fid);
+    end
+end
+
 if nargout > 0
     varargout{1} = str;
-else
+elseif ~exist('doExport', 'var') || ~doExport
     fprintf('%s\n', str);
 end

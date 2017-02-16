@@ -14,8 +14,8 @@
 %% Function Definition
 function options = getGraphOptions()
 
-scale_factor = 1;
-font_scale_factor = 1;
+scale_factor = 2;
+font_scale_factor = 1.5;
 
 % Figure options, do big image and have latex resize it. Looks nicer
 options.figure.units = 'centimeters';

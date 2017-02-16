@@ -25,6 +25,11 @@ end
 algos = sort(fieldnames(results));
 myalgo = getSubOption({}, 'cell', plotOptions, 'plot', 'emphasize');
 
+if numel(myalgo) == 1 % && use_regexp_to_expand
+    k = cellfun(@(x) ~isempty(regexp(x, myalgo{1}, 'ONCE')), algos);
+    myalgo = algos(k);
+end
+
 % Set default style
 algos = [intersect(algos, myalgo); setdiff(algos, myalgo)];
 default_styles = repmat({'-', '--', '-.', ':'}, 1, ceil(numel(algos)/4));
@@ -40,6 +45,7 @@ figunits = getSubOption('centimeters', 'char', plotOptions, 'figure', 'units');
 % plotRange = getSubOption([], 'double', plotOptions, 'plot', 'range');
 styles = getSubOption(default_styles, 'cell', plotOptions, 'plot', 'styles');
 colors = getSubOption(cubehelix(numel(algos) + 1, .5, -1.5, 3, 1), 'double', plotOptions, 'plot', 'colors');
+fixedStyles = getSubOption(struct, 'struct', plotOptions, 'plot', 'fixedStyles');
 yfun = getSubOption(@(x) mean(x,2), 'function_handle', plotOptions, 'plot', 'y_fun');
 xfun = getSubOption(@(x) mean(x,2), 'function_handle', plotOptions, 'plot', 'x_fun');
 linewidth = getSubOption(2, 'double', plotOptions, 'plot', 'linewidth');
@@ -128,8 +134,14 @@ for i = 1:numel(algos)
     
     lw = linewidth;
     if strcmp(algos{i}, myalgo); lw = 1.5 * lw; end
-    plot(ax, x, y, styles{mod(i-1, numel(styles))+1}, ...
-        'linewidth', lw, 'color', colors(mod(i-1, size(colors,1))+1,:), style{:});
+    
+    plotStyle = {styles{mod(i-1, numel(styles))+1}, ...
+        'color', colors(mod(i-1, size(colors,1))+1,:), style{:}};
+    if isfield(fixedStyles, algos{i})
+        plotStyle = fixedStyles.(algos{i});
+    end
+    
+    plot(ax, x, y, plotStyle{:}, 'linewidth', lw);
     
     if (do_errorbar)
         lo = lo_fun(results.(algos{i}).(y_field));

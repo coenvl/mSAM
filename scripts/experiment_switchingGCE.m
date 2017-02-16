@@ -8,14 +8,15 @@ settings.numExps = 100; % i.e. number of problems generated
 settings.nMaxIterations = 0;
 settings.nStableIterations = 100;
 settings.nagents = 200;
-settings.ncolors = 4;
-settings.visualizeProgress = true;
-settings.graphType = @nGridGraph;
+settings.ncolors = 10;
+settings.visualizeProgress = false;
+settings.graphType = @randomGraph;
 settings.series = 'hybrid+';
 
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);
-options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
+% options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 
 if isequal(settings.graphType, @scalefreeGraph)
     options.graphType = @scalefreeGraph;
@@ -77,6 +78,8 @@ for e = 1:settings.numExps
             if settings.visualizeProgress
                 visualizeProgress(exp, solverfield);
             end
+			drawnow;
+			pause(0.1);
 %         catch err
 %             warning('Timeout or error occured:');
 %             disp(err);
