@@ -19,7 +19,7 @@ if (exist(javapath, 'dir'))
     javaaddpath(javapath)
 else
     % Add the library
-    javalib = fullfile(rootpath, 'lib', 'jCoCoA.jar');
+    javalib = fullfile(rootpath, 'lib', 'jSAM.jar');
     javaaddpath(javalib);
 end
 
