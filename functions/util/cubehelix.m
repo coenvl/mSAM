@@ -106,6 +106,9 @@ end
 %
 % ### Core Function ###
 %
+
+N = N + 1; % Coen edit
+
 map = zeros(N,3);
 cof = [-0.14861,1.78277;-0.29227,-0.90649;1.97294,0];
 %
@@ -120,6 +123,8 @@ end
 lo = map<0;
 hi = map>1;
 map = max(0,min(1,map));
+
+map = map(1:end-1,:); % Coen edit
 %
 end
 %----------------------------------------------------------------------END:cubehelix
