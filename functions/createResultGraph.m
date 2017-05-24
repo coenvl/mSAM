@@ -118,7 +118,9 @@ for i = 1:numel(algos)
         style = {'Marker', 'none'};
         
         if size(x,1) == 1
-            x = 1:numel(y);
+            % Old setting... why did we have this?
+            % x = 1:numel(y);
+            x = results.(algos{i}).(x_field);
         end
 %         
 %         if ~isempty(plotRange)

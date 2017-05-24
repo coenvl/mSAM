@@ -15,12 +15,12 @@
 function options = getGraphOptions()
 
 scale_factor = 2;
-font_scale_factor = 1.5;
+font_scale_factor = 2;
 
 % Figure options, do big image and have latex resize it. Looks nicer
 options.figure.units = 'centimeters';
 options.figure.width = scale_factor * 20;
-options.figure.height = scale_factor * 7;
+options.figure.height = scale_factor * 9;
 
 % Label options
 options.label.font = 'times';

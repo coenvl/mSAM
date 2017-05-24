@@ -4,82 +4,87 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 200; % i.e. number of problems generated
+settings.numExps = 100; % i.e. number of problems generated
 settings.nMaxIterations = 0;
 settings.nStableIterations = 40;
-settings.nagents = 100;
-settings.nreceivers = 75;
-settings.nsensors = 50;
+settings.sizes = [4 8 16 32 64 128 192 256 384 512 768 1024];
 settings.ncolors = 20;
 settings.graphType = 'customWPT';
 settings.series = 'wpt';
 
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);
-options.graph.nAgents = uint16(settings.nagents);
 options.nStableIterations = uint16(settings.nStableIterations);
 options.nMaxIterations = uint16(settings.nMaxIterations);
 
 solvers = getExperimentSolvers(settings.series);
+solvers = solvers(strcmp({solvers.name}, 'CoCoA_UF'));
 
 %% Do the experiment
 for e = 1:settings.numExps
     
-    % Generate an experiment scenario
-    [agentPos, receiverPos, sensorPos, edges, transmitter_to_receiver, transmitter_to_sensor] = generateWPTScenario(settings.nagents, settings.nreceivers, settings.nsensors);
+    for a = 1:numel(settings.sizes)
+        nagents = settings.sizes(a);
+        nreceivers = ceil(nagents * .8);
+        nsensors = ceil(nagents * .6);
+        
+        % Generate an experiment scenario
+        [agentPos, receiverPos, sensorPos, edges, transmitter_to_receiver, transmitter_to_sensor] = generateWPTScenario(nagents, nreceivers, nsensors);
 
-    while (~higherOrderGraphIsConnected(edges, settings.nagents))
-       [agentPos, receiverPos, sensorPos, edges, transmitter_to_receiver, transmitter_to_sensor] = generateWPTScenario(settings.nagents, settings.nreceivers, settings.nsensors);
-    end   
-    drawnow;
-    
-    % Set all positions
-    for i = 1:numel(agentPos)
-        options.agentProperties(i).position = agentPos{i};
-    end
-    options.constraint.arguments = receiverPos;
-    options.sensorConstraint.arguments = sensorPos;
+        while (~higherOrderGraphIsConnected(edges, nagents))
+           [agentPos, receiverPos, sensorPos, edges, transmitter_to_receiver, transmitter_to_sensor] = generateWPTScenario(nagents, nreceivers, nsensors);
+        end   
+        drawnow;
 
-    exp = WPTExperiment(edges, options);
+        % Set all positions
+        for i = 1:numel(agentPos)
+            options.agentProperties(i).position = agentPos{i};
+        end
+        options.graph.nAgents = nagents;
+        options.constraint.arguments = receiverPos;
+        options.sensorConstraint.arguments = sensorPos;
+
+        exp = WPTExperiment(edges, options);
     
-    for a = 1:numel(solvers)
-        solvername = solvers(a).name;
+        solvername = solvers.name;
         solverfield = matlab.lang.makeValidName(solvername);
-        exp.initSolverType = solvers(a).initSolverType;
-        exp.iterSolverType = solvers(a).iterSolverType; 
+        exp.initSolverType = solvers.initSolverType;
+        exp.iterSolverType = solvers.iterSolverType; 
         
 %         try
-            fprintf('Performing experiment with %s (%d/%d)\n', solvername, e, settings.numExps);
+            fprintf('Performing experiment with %d agents (%d/%d)\n', nagents, e, settings.numExps);
             
             exp.run();
             fprintf('Finished in t = %0.1f seconds\n', exp.results.time(end));
             
-            results.(solverfield).costs{e} = exp.results.cost; 
-            results.(solverfield).evals{e} = exp.results.evals;
-            results.(solverfield).msgs{e} = exp.results.msgs;
-            results.(solverfield).times{e} = exp.results.time;
-            results.(solverfield).iterations(e) = exp.results.numIters;
+            results.(solverfield).size(a) = nagents;
+            results.(solverfield).costs(a, e) = exp.results.cost; 
+            results.(solverfield).evals(a, e) = exp.results.evals;
+            results.(solverfield).msgs(a, e) = exp.results.msgs;
+            results.(solverfield).times(a, e) = exp.results.time;
+            results.(solverfield).iterations(a, e) = exp.results.numIters;
 %         catch err
 %             warning('Timeout or error occured:');
 %             disp(err);
 %         end
-    end
     
-    % Calculate optimal value using Sinan's code
-    EMR_Threshold = 0.018;
-    tic;
-    [x_lp, fval_lp] = LP_solution(transmitter_to_receiver,transmitter_to_sensor,EMR_Threshold,10,0);
-    t_lp = toc;
-    results.LPSolver.iterations(e) = 1;
-    results.LPSolver.evals{e} = nan;
-    results.LPSolver.msgs{e} = nan;
-    results.LPSolver.costs{e} = fval_lp;
-    results.LPSolver.times{e} = t_lp;
+        exp.reset();
+
+        % Calculate optimal value using Sinan's code
+        EMR_Threshold = 0.018;
+        tic;
+        [x_lp, fval_lp] = LP_solution(transmitter_to_receiver,transmitter_to_sensor,EMR_Threshold,10,0);
+        t_lp = toc;
+        
+        results.LPSolver.size(a) = nagents;
+        results.LPSolver.costs(a, e) = fval_lp;
+        results.LPSolver.times(a, e) = t_lp;
+    end
     
 end
 
 %% Save results
-filename = sprintf('results_wpt_%s_i%d_d%d_n%d_t%s.mat', settings.graphType, settings.numExps, settings.ncolors, settings.nagents, datestr(now,30))
+filename = sprintf('results_wpt_sizes_i%d_d%d_n%d_t%s.mat', settings.numExps, settings.ncolors, numel(settings.sizes), datestr(now,30))
 save(fullfile('data', filename), 'settings', 'options', 'solvers', 'results');
 
 %% Create graph
@@ -87,8 +92,8 @@ save(fullfile('data', filename), 'settings', 'options', 'solvers', 'results');
 graphoptions = getGraphOptions();
 graphoptions.axes.yscale = 'linear'; % True for most situations
 graphoptions.label.Y = 'Solution Cost';
-graphoptions.label.X = 'Time';
+graphoptions.label.X = 'size';
 graphoptions.plot.errorbar = false;
-resultsMat = prepareResults(results);
-createResultGraph(resultsMat, 'times', 'costs', graphoptions);
+graphoptions.plot.styles = {'-'};
+createResultGraph(results, 'size', 'costs', graphoptions);
 

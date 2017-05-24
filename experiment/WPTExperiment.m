@@ -27,6 +27,10 @@ classdef WPTExperiment < Experiment
         
         % Only for maxSum
         sensorConstraintAgent@cell;
+        
+        % Measurement noise defines the magnitude of the error of
+        % measurements
+        measurementNoise@double scalar;
     end
     
     methods
@@ -34,16 +38,9 @@ classdef WPTExperiment < Experiment
         function obj = WPTExperiment(edges, options)
             obj = obj@Experiment(edges{1}, options);
             obj.sensorConstraintArgs = getSubOption({}, 'cell', options, 'sensorConstraint', 'arguments');
-            
-            obj.graph.sensorEdges = edges{2};
-            
-            % We can only accept max-sum solvers since we have higher-order
-            % constraints.
-            if isempty(strfind(obj.iterSolverType, 'MaxSum'))
-                error('WPTEXPERIMENT:NOMAXSUM',...
-                    'WPT Experiment can onlt be performed using the max-sum solver');
-            end
-            
+            obj.measurementNoise = getSubOption(0.0, 'double', options, 'measurementNoise');
+                        
+            obj.graph.sensorEdges = edges{2};           
         end % WPTEXPERIMENT
         
         %% INIT - Experiment initialization
@@ -52,8 +49,10 @@ classdef WPTExperiment < Experiment
 
             obj.initReceiverConstraints();
             obj.initSensorConstraints();
-            obj.initReceiverConstraintAgents();
-            obj.initSensorConstraintAgents();
+            if ~isempty(strfind(obj.iterSolverType, 'MaxSum'))
+                obj.initReceiverConstraintAgents();
+                obj.initSensorConstraintAgents();
+            end
             
             % Concatenate wpt properties into properties
             obj.constraint = [obj.constraint obj.sensorConstraint];
@@ -64,12 +63,12 @@ classdef WPTExperiment < Experiment
     methods (Access = private)
         %% INITVARIABLES - Initialize receiver variables and agents
         function initVariables(obj)
-            for i = 1:max([obj.graph.edges{:}])
+            for i = 1:max(max([obj.graph.edges{:} obj.graph.sensorEdges{:}]))
                 varName = sprintf('transmitter%05d', i);
                 agentName = sprintf('agent%05d', i);
                 
                 obj.variable{i} = nl.coenvl.sam.variables.FixedPrecisionVariable(0, 10, 10 / double(obj.nColors), varName);
-                obj.agent{i} = nl.coenvl.sam.agents.VariableAgent(obj.variable{i}, agentName);
+                obj.agent{i} = nl.coenvl.sam.agents.VariableAgent(obj.variable{i}, agentName, nl.coenvl.sam.agents.SolverAgent.MULTI_THREADED);
                 
                 obj.variable{i}.set('position', obj.agentProps(i).position);
                 
@@ -84,11 +83,15 @@ classdef WPTExperiment < Experiment
         
         %% INITRECEIVERCONSTRAINTS - Add constraints to the graph
         function initReceiverConstraints(obj)
-            constraintType = 'nl.coenvl.sam.constraints.WPTReceiverConstraint';
+            constraintType = 'nl.coenvl.sam.wpt.WPTReceiverConstraint';
             for i = 1:numel(obj.graph.edges)
                 edge = obj.graph.edges{i};
                 
-                obj.constraint{i} = feval(constraintType, obj.constraintArgs{i});
+                if (~isempty(obj.measurementNoise))
+                    obj.constraint{i} = feval(constraintType, obj.constraintArgs{i}, 1 + (randn * obj.measurementNoise));
+                else
+                    obj.constraint{i} = feval(constraintType, obj.constraintArgs{i});
+                end
                 
                 for j = 1:numel(edge)
                     a = edge(j);
@@ -113,7 +116,7 @@ classdef WPTExperiment < Experiment
                 obj.constraintAgent{i}.setSolver(feval(functionSolverType, obj.constraintAgent{i}));
 
                 % Set constraint agent address as targets
-                for a = edge
+                for a = edge(:)'
                      obj.agent{a}.addFunctionAddress(obj.constraintAgent{i}.getID());
                 end
             end
@@ -121,11 +124,15 @@ classdef WPTExperiment < Experiment
         
         %% INITSENSORCONSTRAINTS - Add sensor constraints to the graph
         function initSensorConstraints(obj)
-            constraintType = 'nl.coenvl.sam.constraints.WPTSensorConstraint';
+            constraintType = 'nl.coenvl.sam.wpt.WPTSensorConstraint';
             for i = 1:numel(obj.graph.sensorEdges)
                 edge = obj.graph.sensorEdges{i};
                 
-                obj.sensorConstraint{i} = feval(constraintType, obj.sensorConstraintArgs{i});
+                if (~isempty(obj.measurementNoise))
+                    obj.sensorConstraint{i} = feval(constraintType, obj.sensorConstraintArgs{i}, 1 + (randn * obj.measurementNoise));
+                else
+                    obj.sensorConstraint{i} = feval(constraintType, obj.sensorConstraintArgs{i});
+                end
                 
                 for j = 1:numel(edge) 
                     a = edge(j);
@@ -149,7 +156,7 @@ classdef WPTExperiment < Experiment
                 obj.sensorConstraintAgent{i}.setSolver(feval(functionSolverType, obj.sensorConstraintAgent{i}));
                 
                 % Set constraint agent address as targets
-                for a = edge
+                for a = edge(:)'
                     obj.agent{a}.addFunctionAddress(obj.sensorConstraintAgent{i}.getID());
                 end
             end

@@ -16,7 +16,7 @@ function [agentPos, receiverPos, sensorPos, edges, transmitter_to_receiver, tran
     generateWPTScenario( nagents, nreceivers, nsensors )
 
 % Ballpark something that might work
-MAX_ARITY = ceil(log10(nagents)+1);
+MAX_ARITY = 4; %ceil(log10(nagents)+1);
 
 tp = 100 * (rand(1,2) + poissonSample(nagents));
 tp = tp - min(tp);
@@ -38,8 +38,8 @@ for i = nsensors:-1:1
     sensorPos{i} = sp(i,:);
 end
 
-transmitter_to_receiver = sqrt(pdist2(tp, rp));
-transmitter_to_sensor = sqrt(pdist2(tp, sp));
+transmitter_to_receiver = pdist2(tp, rp, 'euclidean');
+transmitter_to_sensor = pdist2(tp, sp, 'euclidean');
 
 receiverEdges = getEdgesFromDistances(transmitter_to_receiver, MAX_ARITY);
 sensorEdges = getEdgesFromDistances(transmitter_to_sensor, MAX_ARITY);
@@ -95,14 +95,14 @@ transmitter_to_receiver(~t2r_mask) = inf;
 transmitter_to_sensor(~t2s_mask) = inf;
 
 fprintf('generated problem\n');
-return;
+% return;
 % agentPos = {[10 23], [40 80], [65 45], [130 30]};
 % receiverPos = {[15 60], [50 20], [80 80], [103 52], [128 80]};
 % sensorPos = {[35 50], [92 20], [108 80]};
 
 % Receiver edges - Sensor edges
 % edges = {{1, [1 3], [2 3], [3 4], 4}, {[1 2 3], [3 4], 3}};
-
+return;
 %% Plot the problem
 clf;
 scatter(tp(:,1), tp(:,2), 'ro')
@@ -127,22 +127,3 @@ end
 legend('Transmitter', 'Receiver', 'Sensor');
 
 end
-
-function edges = getEdgesFromDistances(transmitter_distances, MAX_ARITY)
-
-% Every column will be 1 constraint
-ordered = sort(transmitter_distances, 1);
-max_dist = mean(ordered(MAX_ARITY,:));
-for c = size(transmitter_distances, 2):-1:1
-    % Find sensors that are closer than the average MAX_ARITY-closest
-    nearbyTransmitters = find(transmitter_distances(:,c) < max_dist);
-    if numel(nearbyTransmitters) > MAX_ARITY
-        % If necessary cap to the MAX_ARITY-closest
-        [~, order] = sort(transmitter_distances(nearbyTransmitters, c));
-        nearbyTransmitters = nearbyTransmitters(order(1:MAX_ARITY));
-    end
-    edges{c} = nearbyTransmitters';
-end
-
-end
-

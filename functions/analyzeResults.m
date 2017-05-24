@@ -33,7 +33,7 @@ for i = 1:numel(algos)
         if all(isnan(y{e})); continue; end
         
         n = find(y{e} <= (1.01*min(y{e})), 1, 'first');
-        if isempty(n); n = numel(y); end
+        if isempty(n); n = numel(y{e}); end
         
         iters(e) = n;
         
