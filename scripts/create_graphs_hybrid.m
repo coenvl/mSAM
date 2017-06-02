@@ -1,18 +1,12 @@
 %% Get Default options
 options = getGraphOptions();
-options.plot.colors = cubehelix(7, .5, -1.5, 3, 1);
-options.export.do = true;
+options.export.do = false;
+options.export.dotables = false;
 options.export.format = 'eps';
 options.export.folder = 'C:\Data\Documents\PHD\papers\hybrid\images';
 options.export.tables = 'C:\Data\Documents\PHD\papers\hybrid\tables';
 options.plot.errorbar = false;
-% options.plot.hi_error_fun = @(x) nanmean(x,2) + nanstd(x, [], 2);
-% options.plot.lo_error_fun = @(x) nanmean(x,2) - nanstd(x, [], 2);
-options.plot.y_fun = @(x) nanmean(x,2);
-options.plot.x_fun = @(x) nanmean(x,2);
 options.plot.fixedStyles = getFixedAlgoStyles();
-options.plot.emphasize = {'CoCoA*'};
-% options.plot.styles = {':', '-', '--', '-.', '-', '--'};
 options.label.Y = 'Solution cost';
 options.label.X = 'Running time (s)';
 
@@ -61,8 +55,8 @@ results.CoCoA = results.CoCoA_UF;
 results = rmfield(results,'CoCoA_UF');
 results = rmfield(results,{'DSA', 'CoCoA_DSA'});
 results = rmfield(results,{'MGM2', 'CoCoA_MGM2'});
-results.Max_Sum = results.Max_Sum_ADVP;
-results = rmfield(results,'Max_Sum_ADVP');
+%results.Max_Sum = results.Max_Sum_ADVP;
+results = rmfield(results,{'Max_Sum_ADVP', 'Max_Sum'});
 resultsMat = prepareResults(results);
 
 % Create figure
@@ -85,7 +79,7 @@ fprintf('In %d out of %d instances MCSMGM finds a better result with CoCoA insta
     sum(resultsMat.CoCoA_MCSMGM.costs(end,:) < resultsMat.MCSMGM.costs(end,:)), ...
     size(resultsMat.CoCoA_MCSMGM.costs, 2));
 
-%% Graph coloring experiment
+%% Mid-run switching
 exp(3) = load('data\hybrid+\results_graphColoring_randomGraph_i100_d4_n200_t20170209T085209');
 results = fixSleepyLaptop(exp(3).results);
 options.export.name = 'hybrid+';
@@ -99,13 +93,43 @@ createResultTable(results, options);
 % Convert from cells to matrix
 % results.CoCoA = results.CoCoA_UF;
 results = rmfield(results, {'ACLS','ACLSUB','DSA','MCSMGM','MGM2'});
+results = rmfield(results, {'ACLSUB_ACLS','ACLSUB_MGM2'});
+results = rmfield(results, {'ACLS_ACLSUB','ACLS_MGM2'});
+results = rmfield(results, {'DSA_ACLSUB','DSA_MGM2'});
+results = rmfield(results, {'MGM2_ACLSUB','MGM2_ACLS','MGM2_DSA','MGM2_MCSMGM'});
+results = rmfield(results, {'MCSMGM_ACLS','MCSMGM_MGM2'});
 resultsMat = prepareResults(results);
 
 % Create figure
 options.figure.number = 189;
 options.axes.xmin = [];
-options.axes.xmax = 400;
+options.axes.xmax = 250;
 options.axes.ymin = 20;
 options.axes.ymax = 100;
 options.label.X = 'Iterations';
 createResultGraph(resultsMat, 'iterations', 'costs', options);
+
+%% Mid-run switching semirandom
+% exp(4) = load('data\hybrid+\results_SwitchingSolverGCE_SemiRandomConstraint_randomGraph_i100_d10_n200_t20170217T082001.mat');
+% results = fixSleepyLaptop(exp(4).results);
+% options.export.name = 'hybrid+_semirandom';
+% 
+% if isfield(options.plot, 'fixedStyles')
+%     options.plot = rmfield(options.plot, 'fixedStyles');
+% end
+% 
+% createResultTable(results, options);
+% 
+% % Convert from cells to matrix
+% % results.CoCoA = results.CoCoA_UF;
+% results = rmfield(results, {'ACLS','ACLSUB','DSA','MCSMGM','MGM2'});
+% resultsMat = prepareResults(results);
+% 
+% % Create figure
+% options.figure.number = 189;
+% options.axes.xmin = [];
+% options.axes.xmax = 300;
+% options.axes.ymin = [];
+% options.axes.ymax = [];
+% options.label.X = 'Iterations';
+% createResultGraph(resultsMat, 'iterations', 'costs', options);

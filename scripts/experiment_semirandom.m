@@ -86,8 +86,7 @@ for e = 1:settings.numExps
 end
 
 %% Save results
-filename = sprintf('results_semirandom_%s_i%d_d%d_n%d_t%s.mat', func2str(settings.graphType), settings.numExps, settings.ncolors, settings.nagents, datestr(now,30))
-save(fullfile('data', settings.series, filename), 'settings', 'options', 'solvers', 'results');
+saveResults
 
 %% Create graph
 

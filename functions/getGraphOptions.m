@@ -14,8 +14,8 @@
 %% Function Definition
 function options = getGraphOptions()
 
-scale_factor = 2;
-font_scale_factor = 1.5;
+scale_factor = 1.5;
+font_scale_factor = 1.2;
 
 % Figure options, do big image and have latex resize it. Looks nicer
 options.figure.units = 'centimeters';
@@ -50,8 +50,9 @@ options.export.arguments = {'-transparent', '-q105', '-r600', '-m2'};
 options.export.folder = fullfile(pwd, 'figures');
 
 % Plot options
-options.plot.emphasize = {'CoCoA', 'CoCoS'};
-options.plot.y_fun = @(x)mean(x,2);
+options.plot.emphasize = {'CoCo*'};
+options.plot.y_fun = @(x) nanmean(x,2);
+options.plot.x_fun = @(x) nanmean(x,2);
 % options.plot.colors = cubehelix(6, .5, -1.5, 3, 1);
 options.plot.linewidth = scale_factor * 2;
 
@@ -62,3 +63,5 @@ secmax = @(x)(sec(sort(x,2,'descend')));
 secmin = @(x)(sec(sort(x,2,'ascend')));
 options.plot.hi_error_fun = @(x) secmax(x);
 options.plot.low_error_fun = @(x) secmin(x);
+% options.plot.hi_error_fun = @(x) nanmean(x,2) + nanstd(x, [], 2);
+% options.plot.lo_error_fun = @(x) nanmean(x,2) - nanstd(x, [], 2);
