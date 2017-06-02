@@ -14,8 +14,13 @@
 %% Function Definition
 function [ size ] = graphSize( edges )
 
+if isempty(edges)
+    size = 0;
+    return;
+end
+
 if iscell(edges)
-    size = sum(cellfun(@(x) graphSize(x), edges));
+    size = max(cellfun(@(x) graphSize(x), edges));
 else
     size = max(max(edges));
 end

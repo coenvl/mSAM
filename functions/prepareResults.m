@@ -12,16 +12,18 @@
 %
 
 %% Function Definition
-function matresults = prepareResults(cellresults, range)
+function matresults = prepareResults(cellresults, fixedrange)
 
 algos = sort(fieldnames(cellresults));
 
 for i = 1:numel(algos)
-    if nargin < 2 || isempty(range)
+    if nargin < 2 || isempty(fixedrange)
         % range = 1:max(structfun(@(x) max(x.iterations), cellresults));
         % range = 1:max([cellresults.(algos{i}).iterations{:}]);
         range = 1:max(cellresults.(algos{i}).iterations);
-    end    
+    else
+        range = fixedrange;
+    end
     
     for e = 1:numel(cellresults.(algos{i}).iterations)
         matresults.(algos{i}).iterations(e) = cellresults.(algos{i}).iterations(e);

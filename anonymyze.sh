@@ -22,7 +22,9 @@ cp -r functions $DST/.
 cp -r lib $DST/.
 cp -r scripts $DST/.
 cp startup.m $DST/.
-cp README.md $DST/.
+
+# Copy README
+head -n -4 README.md > $DST/README.md
 
 echo "Anonymizing $DST"
 for f in `find $DST -name '*.m'` $DST/README.md; do

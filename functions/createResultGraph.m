@@ -118,7 +118,9 @@ for i = 1:numel(algos)
         style = {'Marker', 'none'};
         
         if size(x,1) == 1
-            x = 1:numel(y);
+            % Old setting... why did we have this?
+            % x = 1:numel(y);
+            x = results.(algos{i}).(x_field);
         end
 %         
 %         if ~isempty(plotRange)
@@ -186,7 +188,9 @@ set(ax, 'fontsize', axessize, 'fontname', axesfont, 'linewidth', axeslinewidth, 
     'YLim', [yminval ymax]);%, 'YTick', ytick); %max(get(ax, 'YLim'))]);
 
 yax = get(ax, 'YAxis');
-set(yax, 'Exponent', floor(log10(ymax)));
+if (ymax > 0)
+    set(yax, 'Exponent', floor(log10(ymax)));
+end
 
 % ht = title('Solution cost', 'fontsize', titlesize, 'fontname', font, 'fontweight', titleweight);
 xlabel(ax, x_label, 'fontsize', labelsize, 'fontname', labelfont);

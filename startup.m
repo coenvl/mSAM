@@ -13,8 +13,12 @@ addpath(fullfile(rootpath, 'functions', 'graph'));
 addpath(fullfile(rootpath, 'functions', 'util'));
 addpath(fullfile(rootpath, 'scripts'));
 
+% Add parent folder
+addpath(fileparts(rootpath));
+
 % Check if there is a live java build
-javapath = fullfile(rootpath, '..', 'jSAM', 'bin');
+% javapath = fullfile(rootpath, '..', 'jSAM', 'bin');
+javapath = fullfile(getenv('path_develop'), 'SAM', 'jSAM', 'bin');
 if (exist(javapath, 'dir'))
     % Add the live java folder
     javaaddpath(javapath)

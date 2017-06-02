@@ -45,7 +45,7 @@ end
 str = [header sprintf('\n\t%s \\\\', algoStr{:}) sprintf(' \\bottomrule\n\\end{tabular}')];
 
 if (nargin > 1 && isstruct(options))
-    doExport = getSubOption(false, 'logical', options, 'export', 'do');
+    doExport = getSubOption(false, 'logical', options, 'export', 'dotables');
     outputfolder = getSubOption(pwd, 'char', options, 'export', 'tables');
     expname = getSubOption('experiment', 'char', options, 'export', 'name');
     

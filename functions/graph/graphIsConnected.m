@@ -27,7 +27,8 @@ connectedNodes = edges(1,1);
 % Keep a list of the "newly" connected nodes
 newNodes = connectedNodes;
 
-nodes = unique(edges(:));
+% nodes = unique(edges(:));
+nodes = 1:graphSize(edges);
 while ~isempty(newNodes)
     newNode = newNodes(end);
     newNodes(end) = [];

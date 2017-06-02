@@ -18,11 +18,11 @@ function solvers = getExperimentSolvers(series)
 if nargin > 0 && ~isempty(series)
     switch series
         case 'aaai17'
-            idx = [1 2 3 7 9 11 13];
+            idx = [1 2 3 7 9 11 14];
         case 'ijcai17'
             idx = 1:14;
         case 'wpt'
-            idx = 13;
+            idx = [2 4 6 8 10]; %2:10 %[2 3 7 9 13];
         case 'hybrid+'
             idx = [3 5 7 9 11 16:35];
         otherwise
