@@ -59,6 +59,7 @@ for e = 1:settings.numExps
             results.(solverfield).msgs{e} = exp.results.msgs;
             results.(solverfield).times{e} = exp.results.time;
             results.(solverfield).iterations(e) = exp.results.numIters;
+            visualizeProgress(exp, solvername);
 %         catch err
 %             warning('Timeout or error occured:');
 %             disp(err);

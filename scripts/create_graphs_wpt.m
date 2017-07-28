@@ -12,7 +12,7 @@ exp.results = fixSleepyLaptop(exp(1).results);
 
 % Convert from cells to matrix
 resultsMat = prepareResults(exp.results);
-% resultsMat = rmfield(resultsMat, 'Max_Sum');
+resultsMat = rmfield(resultsMat, 'Max_Sum');
 resultsMat = renameStructField(resultsMat, 'CoCoA_UF', 'CoCoA_WPT');
 
 % Create figure
@@ -62,7 +62,7 @@ options.label.X = 'Model Noise (\sigma)';
 createResultGraph(exp.results, 'noise', 'costs', options);
 
 %% Plot the dynamic run experiment
-exp = load('data\dynamic_withpower.mat')
+exp = load('data\dynamic_withpower.mat');
 
 fig = figure(190);
 set(fig, 'Units', options.figure.units, ...
@@ -80,8 +80,8 @@ colors = cubehelix(2, .5, -1.5, 3, 1);
 plot(exp.cost, ':', 'linewidth', options.plot.linewidth, 'color', colors(1,:));
 plot(exp.lpcost, '-', 'linewidth', options.plot.linewidth, 'color', colors(2,:));
 
-scatter(find(a), cost(a), 'g^', 'filled', 'sizedata', 200)
-scatter(find(r), cost(r), 'rv', 'filled', 'sizedata', 200)
+scatter(find(a), exp.cost(a), 'g^', 'filled', 'sizedata', 200)
+scatter(find(r), exp.cost(r), 'rv', 'filled', 'sizedata', 200)
 
 hl = legend(ax, 'TESSA', 'LP Solver');
 set (hl, 'Location', options.legend.location, ...
@@ -121,6 +121,7 @@ power = exp.wpt(:,1:exp.settings.nreceivers);
 plot(max(power,[],2), ':', 'linewidth', options.plot.linewidth, 'color', colors(1,:));
 plot(mean(power,2), '-', 'linewidth', options.plot.linewidth, 'color', colors(2,:));
 plot(min(power,[],2), ':', 'linewidth', options.plot.linewidth, 'color', colors(3,:));
+legend('Maximum', 'Average', 'Minimum')
 
 set(ax, 'fontsize', options.axes.fontsize, 'fontname', options.axes.font, ...
     'linewidth', options.axes.linewidth, ...
@@ -155,6 +156,7 @@ plot(repmat(0.018,1,360), 'r-', 'linewidth', options.plot.linewidth);
 plot(max(power,[],2), ':', 'linewidth', options.plot.linewidth, 'color', colors(1,:));
 plot(mean(power,2), '-', 'linewidth', options.plot.linewidth, 'color', colors(2,:));
 plot(min(power,[],2), ':', 'linewidth', options.plot.linewidth, 'color', colors(3,:));
+legend('EMR Threshold', 'Maximum', 'Average', 'Minimum', 'Location', 'SouthEast')
 
 set(ax, 'fontsize', options.axes.fontsize, 'fontname', options.axes.font, ...
     'linewidth', options.axes.linewidth, ...

@@ -68,7 +68,7 @@ classdef WPTExperiment < Experiment
                 agentName = sprintf('agent%05d', i);
                 
                 obj.variable{i} = nl.coenvl.sam.variables.FixedPrecisionVariable(0, 10, 10 / double(obj.nColors), varName);
-                obj.agent{i} = nl.coenvl.sam.agents.VariableAgent(obj.variable{i}, agentName, nl.coenvl.sam.agents.SolverAgent.MULTI_THREADED);
+                obj.agent{i} = nl.coenvl.sam.agents.VariableAgent(obj.variable{i}, agentName);
                 
                 obj.variable{i}.set('position', obj.agentProps(i).position);
                 

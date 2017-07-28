@@ -22,7 +22,7 @@ if nargin > 0 && ~isempty(series)
         case 'ijcai17'
             idx = 1:14;
         case 'wpt'
-            idx = [2 4 6 8 10]; %2:10 %[2 3 7 9 13];
+            idx = [2 3 7 9 11 13];
         case 'hybrid+'
             idx = [3 5 7 9 11 16:35];
         otherwise
