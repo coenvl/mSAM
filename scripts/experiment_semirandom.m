@@ -11,7 +11,7 @@ settings.ncolors = 10;
 settings.visualizeProgress = true;
 settings.nMaxIterations = 0;
 settings.graphType = @scalefreeGraph;
-settings.series = 'wpt';
+settings.series = 'aaai17';
 
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);

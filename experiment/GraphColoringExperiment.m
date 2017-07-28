@@ -48,7 +48,7 @@ classdef GraphColoringExperiment < Experiment
                 agentName = sprintf('agent%05d', i);
                 
                 obj.variable{i} = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(obj.nColors), varName);
-                obj.agent{i} = nl.coenvl.sam.agents.VariableAgent(obj.variable{i}, agentName);
+                obj.agent{i} = nl.coenvl.sam.agents.VariableAgent(obj.variable{i}, agentName, false, obj.useRootedSolvers);
                 
                 if ~isempty(obj.initSolverType)
                     obj.agent{i}.setInitSolver(feval(obj.initSolverType, obj.agent{i}));

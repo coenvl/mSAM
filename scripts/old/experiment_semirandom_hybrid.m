@@ -4,32 +4,32 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 20; % i.e. number of problems generated
+settings.numExps = 1; % i.e. number of problems generated
 settings.nMaxIterations = [];
-settings.nStableIterations = 200;
-settings.nagents = 200;
-settings.ncolors = 5;
+settings.nStableIterations = 100;
+settings.nagents = 10;
+settings.ncolors = 3;
 settings.visualizeProgress = true;
 % settings.makeRandomConstraintCosts = true;
 
 %% Create the experiment options
 options.ncolors = uint16(settings.ncolors);
-% options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
+options.constraint.type = 'nl.coenvl.sam.constraints.InequalityConstraint';
 % options.constraint.arguments = {1};
 % options.constraint.type = 'nl.coenvl.sam.constraints.CostMatrixConstraint';
 % options.constraint.arguments = {[[1 0 3];[3 1 0];[0 3 1]], [[1 0 3];[3 1 0];[0 3 1]]};
-options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
+% options.constraint.type = 'nl.coenvl.sam.constraints.SemiRandomConstraint';
 % options.constraint.type = 'nl.coenvl.sam.constraints.RandomConstraint';
-
-options.graphType = @scalefreeGraph;
-options.graph.maxLinks = uint16(4);
-options.graph.initialsize = uint16(10);
+% 
+% options.graphType = @scalefreeGraph;
+% options.graph.maxLinks = uint16(4);
+% options.graph.initialsize = uint16(10);
 
 % options.graphType = @randomGraph;
 % options.graph.density = 0.1;
 
-% options.graphType = @delaunayGraph;
-% options.graph.sampleMethod = 'poisson';
+options.graphType = @delaunayGraph;
+options.graph.sampleMethod = 'poisson';
 
 % options.graphType = @nGridGraph;
 % options.graph.nDims = uint16(3);
@@ -44,25 +44,25 @@ options.waitTime = .01;
 
 solvers = {};
 
-solvers(end+1).name = 'CoCoA_simple';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoSolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'CoCoA';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = '';
-
-solvers(end+1).name = 'ACLS';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-solvers(end+1).name = 'CoCoA - ACLS';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
-
-solvers(end+1).name = 'CoCoA - ACLSUB';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
+% solvers(end+1).name = 'CoCoA_simple';
+% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoSolver';
+% solvers(end).iterSolverType = '';
+% 
+% solvers(end+1).name = 'CoCoA';
+% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+% solvers(end).iterSolverType = '';
+% 
+% solvers(end+1).name = 'ACLS';
+% solvers(end).initSolverType = '';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+% 
+% solvers(end+1).name = 'CoCoA - ACLS';
+% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+% 
+% solvers(end+1).name = 'CoCoA - ACLSUB';
+% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
 
 % solvers(end+1).name = 'DSA';
 % solvers(end).initSolverType = '';
@@ -72,29 +72,35 @@ solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.ACLSUBSolver';
 % solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 % solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.DSASolver';
 
-solvers(end+1).name = 'MCSMGM';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-solvers(end+1).name = 'CoCoA - MCSMGM';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
-
-% solvers(end+1).name = 'MGM2';
+% solvers(end+1).name = 'MCSMGM';
 % solvers(end).initSolverType = '';
-% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+% 
+% solvers(end+1).name = 'CoCoA - MCSMGM';
+% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MCSMGMSolver';
+
+solvers(end+1).name = 'MGM2';
+solvers(end).initSolverType = '';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+
+
+solvers(end+1).name = 'ACLS_MGM2';
+solvers(end).initSolverType = 'nl.coenvl.sam.solvers.ACLSSolver';
+solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
+
 
 % solvers(end+1).name = 'CoCoA - MGM2';
 % solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
 % solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MGM2Solver';
 
-solvers(end+1).name = 'Max-Sum_ADVP';
-solvers(end).initSolverType = '';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
-
-solvers(end+1).name = 'CoCoA - Max-Sum_ADVP';
-solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
-solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+% solvers(end+1).name = 'Max-Sum_ADVP';
+% solvers(end).initSolverType = '';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
+% 
+% solvers(end+1).name = 'CoCoA - Max-Sum_ADVP';
+% solvers(end).initSolverType = 'nl.coenvl.sam.solvers.CoCoASolver';
+% solvers(end).iterSolverType = 'nl.coenvl.sam.solvers.MaxSumADVPVariableSolver';
 
 
 %%

@@ -12,6 +12,8 @@ addpath(fullfile(rootpath, 'functions', 'export_fig'));
 addpath(fullfile(rootpath, 'functions', 'graph'));
 addpath(fullfile(rootpath, 'functions', 'util'));
 addpath(fullfile(rootpath, 'scripts'));
+addpath(fullfile(rootpath, 'scripts', 'hybrid'));
+addpath(fullfile(rootpath, 'scripts', 'wpt'));
 
 % Add parent folder
 addpath(fileparts(rootpath));

@@ -40,11 +40,10 @@ classdef SwitchingSolverGCE < GraphColoringExperiment
         end % INIT
         
         %% SWITCHSOLVER - Switch solver
-        function switchSolver(obj)
-            if ~isempty(obj.initSolverType)
-                for i = 1:numel(obj.agent)
-                    obj.agent{i}.setSolver(feval(obj.iterSolverType, obj.agent{i}));
-                end
+        function switchSolver(obj, newIterSolverType)
+            fprintf('Switching to %s', newIterSolverType); 
+            for i = 1:numel(obj.agent)
+                obj.agent{i}.setIterativeSolver(feval(newIterSolverType, obj.agent{i}));
             end
         end % SWITCHSOLVER
     end
@@ -52,26 +51,6 @@ classdef SwitchingSolverGCE < GraphColoringExperiment
     %% Protected methods
     methods (Access = protected)
 
-        %% INITVARIABLES - Initialize variables and agents
-        function initVariables(obj)
-            nagents = obj.graph.size;
-            for i = 1:nagents
-                varName = sprintf('variable%05d', i);
-                agentName = sprintf('agent%05d', i);
-                
-                obj.variable{i} = nl.coenvl.sam.variables.IntegerVariable(int32(1), int32(obj.nColors), varName);
-                obj.agent{i} = nl.coenvl.sam.agents.SolverAgent(obj.variable{i}, agentName);
-                
-                if ~isempty(obj.initSolverType)
-                    obj.agent{i}.setSolver(feval(obj.initSolverType, obj.agent{i}));
-                else
-                    obj.agent{i}.setSolver(feval(obj.iterSolverType, obj.agent{i}));
-                end
-                
-%                 obj.agent{i}.setSolver(feval(obj.initSolverType, obj.agent{i}));
-            end
-        end % INITVARIABLES
-        
         %% INITCONSTRAINTAGENTS - Add constraint agents (MAXSUM only)
         function initConstraintAgents(~)
             error('SWITCHINGSOLVERGCE:INITCONSTRAINTAGENTS:UNDEFINED', ...
