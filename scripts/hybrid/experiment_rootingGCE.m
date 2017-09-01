@@ -4,7 +4,7 @@ warning('off', 'MATLAB:legend:PlotEmpty');
 warning('off', 'MATLAB:legend:IgnoringExtraEntries');
 
 %% Overall experiment settings
-settings.numExps = 10; % i.e. number of problems generated
+settings.numExps = 1; % i.e. number of problems generated
 settings.nMaxIterations = 0;
 settings.nStableIterations = 100;
 settings.nagents = 100;
@@ -113,7 +113,7 @@ for e = 1:settings.numExps
 end
 
 %% Save results
-saveResults
+% saveResults
 
 %% Create graph
 resultsMat = prepareResults(results); %, graphoptions.plot.range);

@@ -343,6 +343,17 @@ classdef (Abstract) Experiment < handle
                 filename = fullfile(pwd, 'graph.png');
             end
             
+            [path, ~, ext] = fileparts(filename);
+            ext = ext(2:end);
+            if isempty(path)
+                path = pwd;
+                filename = fullfile(pwd, filename);
+            end
+            
+            if ~exist(path,'dir')
+                error('No such path: %s', path);
+            end
+    
             colornames = {'red', 'green', 'cyan', 'blue', 'yellow', 'magenta', 'brown', 'coral', 'gold', 'black', 'azure'};
             
             if obj.nColors > numel(colornames)
@@ -384,10 +395,10 @@ classdef (Abstract) Experiment < handle
 
             % layout = fullfile(graphvizpath, 'fdp.exe');
             layout = fullfile(graphvizpath, 'sfdp.exe');
-            % layout = fullfile(graphvizpath, 'neato.exe');
+            % layout = fullfile(graphvizgraphvizpathpath, 'neato.exe');
             % layout = fullfile(graphvizpath, 'twopi.exe');
 
-            [a,b] = system(sprintf('%s %s -T png -Gdpi=100 -o %s', layout, gvfile, filename));
+            [a,b] = system(sprintf('%s %s -T %s -Gdpi=300 -o %s', layout, gvfile, ext, filename));
 
             if nargin == 1
                 if isempty(obj.hdebug) || ~ishandle(obj.hdebug)

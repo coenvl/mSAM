@@ -24,7 +24,7 @@ options.figure.height = scale_factor * 9;
 
 % Label options
 options.label.font = 'times';
-options.label.fontsize = font_scale_factor * 20;
+options.label.fontsize = font_scale_factor * 16;
 
 % Legend options
 options.legend.font = 'times';
@@ -42,6 +42,7 @@ options.axes.minorgrid = 'off';
 options.axes.minortick = 'on';
 options.axes.linewidth = scale_factor * .25;
 options.axes.yscale = 'linear';
+options.axes.xscale = 'linear';
 
 % Export options
 options.export.do = false;
