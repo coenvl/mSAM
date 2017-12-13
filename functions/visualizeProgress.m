@@ -16,6 +16,11 @@ function visualizeProgress(exp, solvername)
 
 persistent handles;
 persistent legendentries;
+persistent stylecounter;
+
+if isempty(stylecounter)
+    stylecounter = 0;
+end
 
 % Visualize data
 ydata = exp.results.cost;
@@ -27,7 +32,8 @@ styles = {'-', '--', '-.', ':'};
 if numel(ydata) == 1
     style = {'LineStyle', 'none', 'Marker', 'o', 'LineWidth', 3, 'Color', colors(randi(10), :)};
 else
-    style = {'LineStyle', styles{randi(numel(styles))}, 'Marker', 'none', 'LineWidth', 3, 'Color', colors(randi(10), :)};
+    stylecounter = mod(stylecounter, numel(styles)) + 1;
+    style = {'LineStyle', styles{stylecounter}, 'Marker', 'none', 'LineWidth', 3, 'Color', colors(randi(10), :)};
 end
 
 if isempty(handles) || ~isfield(handles, 'fig') || ~ishandle(handles.fig)

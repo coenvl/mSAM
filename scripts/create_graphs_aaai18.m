@@ -2,7 +2,7 @@
 graphOptions = getGraphOptions();
 graphOptions.export.do = true;
 graphOptions.export.dotables = true;
-graphOptions.export.format = 'pdf';
+graphOptions.export.format = 'eps';
 graphOptions.export.folder = 'figures\aaai18\';
 graphOptions.export.tables = 'figures\aaai18\tables';
 graphOptions.plot.fixedStyles = getFixedAlgoStyles();
@@ -13,7 +13,7 @@ styles = {'-', '--', ':', '-.'};
 colors = [0 0 0; .8 0 0; .4 .4 1; .9 .7 0];
 
 %% Pseudo random coloring experiment
-load('C:\Users\leeuwencjv\Develop\Projects\SAM\mSAM\data\hybrid\results_GraphColoringExperiment_SemiRandomConstraint_delaunayGraph_i200_d10_n200_t20170610T024736.mat')
+load('data\hybrid\results_GraphColoringExperiment_SemiRandomConstraint_scalefreeGraph_i200_d10_n200_t20170902T111314.mat')
 graphOptions.export.name = 'asymmetric-speedup';
 
 % Convert from cells to matrix
@@ -22,8 +22,6 @@ resultsMat = prepareResults(results);
 createResultTable(results, graphOptions);
 
 % initSolver.SSLA = initSolver.CoCoA_WPT;
-initSolver = rmfield(initSolver, {'CoCoA', 'CoCoA_UF'});
-iterSolver = rmfield(iterSolver, {'DSA', 'MGM2'});
 legendEntries = {'Random', 'Greedy', 'SSLA'};
 
 for iter = fieldnames(iterSolver)'
@@ -45,15 +43,15 @@ for iter = fieldnames(iterSolver)'
     label_x = xlabel(ax, 'Time (s)');
     label_y = ylabel(ax, 'Solution cost');
  
-    xlim([0 5]);
-    ylim([1e4 3e4]);
+%     xlim([0 5]);
+%     ylim([1e4 3e4]);
     
     prettyExportFig(sprintf('%s_%s', graphOptions.export.name, iter{:}),...
-        fig, ax, label_x, label_y, hl, graphOptions)
+        fig, ax, label_x, label_y, hl, [], graphOptions)
 end
 
 %% Graph coloring coloring experiment
-load('C:\Users\leeuwencjv\Develop\Projects\SAM\mSAM\data\hybrid\results_GraphColoringExperiment_InequalityConstraint_delaunayGraph_i200_d3_n200_t20170804T224610.mat')
+load('data\hybrid\results_GraphColoringExperiment_InequalityConstraint_delaunayGraph_i200_d3_n200_t20170804T224610.mat')
 graphOptions.export.name = 'symmetric-speedup';
 
 % Convert from cells to matrix
@@ -87,11 +85,11 @@ for iter = fieldnames(iterSolver)'
     ylim([40 200]);
     
     prettyExportFig(sprintf('%s_%s', graphOptions.export.name, iter{:}),...
-        fig, ax, label_x, label_y, hl, graphOptions)
+        fig, ax, label_x, label_y, hl, [], graphOptions)
 end
 
 %%
-load('C:\Users\leeuwencjv\Develop\Projects\SAM\mSAM\data\hybrid\results_repeatInit_InequalityConstraint_delaunayGraph_i200_d3_n100_t20170804T120652.mat')
+load('data\hybrid\results_repeatInit_InequalityConstraint_delaunayGraph_i200_d3_n100_t20170804T120652.mat')
 graphOptions.export.name = 'repeated-exp';
 
 % Convert from cells to matrix
@@ -136,7 +134,7 @@ for iter = fieldnames(iterSolver)'
     ylim([20 80]);
     
     prettyExportFig(sprintf('%s_%s', graphOptions.export.name, iter{:}),...
-        fig, ax, label_x, label_y, hl, graphOptions);
+        fig, ax, label_x, label_y, hl, [], graphOptions);
 end
 
 %% Get the correlation
@@ -149,7 +147,7 @@ scatter(randomStart, randomEnd, 'filled', 'SizeData', 70);
 label_x = xlabel('Final cost');
 label_y = ylabel('Initial cost');
 prettyExportFig('start-end-correlation',...
-        fig, ax, label_x, label_y, [], graphOptions);
+        fig, ax, label_x, label_y, [], [], graphOptions);
 fprintf('Pearson correlation coefficient is %f', corr2(randomStart, randomEnd))
 
 %% Export the bridge topology
@@ -163,7 +161,7 @@ exp.init();
 exp.print(fullfile(graphOptions.export.folder, sprintf('bridge_topology.%s', graphOptions.export.format)));
 
 %% Show the unfortunate pickings
-load('C:\Users\leeuwencjv\Develop\Projects\SAM\mSAM\data\hybrid\results_GraphColoringExperiment_InequalityConstraint_manualGraph_i100_d3_n12_t20170707T173100.mat')
+load('data\hybrid\results_GraphColoringExperiment_InequalityConstraint_manualGraph_i100_d3_n12_t20170707T173100.mat')
 
 graphOptions.export.name = 'ManualGraph';
 resultsMat = prepareResults(results); %, graphoptions.plot.range);
@@ -194,5 +192,57 @@ for iter = fieldnames(iterSolver)'
     ylim([0 8]);
     
     prettyExportFig(sprintf('%s_%s', graphOptions.export.name, iter{:}),...
-        fig, ax, label_x, label_y, hl, graphOptions)
+        fig, ax, label_x, label_y, hl, [], graphOptions)
 end
+
+
+%% Multi-density experiment
+load('data\hybrid\results_GraphColoringExperiment_InequalityConstraint_randomGraph_i50_d3_n200_t20171210T230713.mat')
+
+graphOptions.export.name = 'multi-densities';
+
+fig = figure(190);
+
+iterNames = fieldnames(iterSolver);
+for d = 1:numel(settings.densities)
+    resultsMat = prepareResults(results(d)); %, graphoptions.plot.range);
+    iter = 'ACLS';
+
+    subplot(3,3,d);
+    ax(d) = gca;
+    hold on;
+    t(d) = title(sprintf('Density: %f', settings.densities(d)));
+    s = 1;
+    xrange = [];
+    yrange = [];
+    for init = fieldnames(initSolver)'
+        solvername = sprintf('%s - %s', init{:}, iter);
+        solverfield = matlab.lang.makeValidName(solvername);
+        
+        times = mean(resultsMat.(solverfield).times, 2);
+        costs = mean(resultsMat.(solverfield).costs, 2);
+        density_times.(solverfield)(d) = times(end);
+        density_costs.(solverfield)(d) = costs(end);
+        xrange = [xrange; min(times) max(times)];
+        yrange = [yrange; min(costs) max(costs)];
+        plot(ax(d), times, costs, 'LineWidth', 3, ...
+            'LineStyle', styles{s}, 'Color', colors(s,:));
+        s=s+1;
+    end
+    
+    ylim(ax(d), [min(yrange(:,1)) max(min(yrange, [], 2) + .5 * diff(yrange,[],2))]);
+    xlim(ax(d), [min(xrange(:,1)) max(xrange(:,2))]);
+    if (d == 3)
+        hl = legend('Random', 'Greedy', 'SSLA');
+    end
+end
+
+graphOptions.legend.fontsize = 18;
+graphOptions.axes.fontsize = 18;
+graphOptions.title.font = 'times';
+graphOptions.axes.yscale = 'linear';
+graphOptions.title.fontsize = 24;
+graphOptions.figure.height = 30;
+
+prettyExportFig(sprintf('%s_%s', graphOptions.export.name, iter),...
+    fig, ax, [], [], hl, t, graphOptions)
