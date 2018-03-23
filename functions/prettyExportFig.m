@@ -1,4 +1,4 @@
-function [ output_args ] = prettyExportFig(name, fig, ax, label_x, label_y, hl, titles, graphOptions)
+function filename = prettyExportFig(name, fig, ax, label_x, label_y, hl, titles, graphOptions)
 %PRETTYEXPORTFIG Summary of this function goes here
 %   Detailed explanation goes here
     set(fig, 'Units', 'centimeters', 'Position', [3 3 graphOptions.figure.width graphOptions.figure.height]);

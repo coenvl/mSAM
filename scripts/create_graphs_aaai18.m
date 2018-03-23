@@ -206,12 +206,12 @@ fig = figure(190);
 iterNames = fieldnames(iterSolver);
 for d = 1:numel(settings.densities)
     resultsMat = prepareResults(results(d)); %, graphoptions.plot.range);
-    iter = 'ACLS';
+    iter = 'MGM2';
 
     subplot(3,3,d);
     ax(d) = gca;
     hold on;
-    t(d) = title(sprintf('Density: %f', settings.densities(d)));
+    t(d) = title(sprintf('Density: %0.2f', settings.densities(d)));
     s = 1;
     xrange = [];
     yrange = [];
@@ -228,6 +228,8 @@ for d = 1:numel(settings.densities)
         plot(ax(d), times, costs, 'LineWidth', 3, ...
             'LineStyle', styles{s}, 'Color', colors(s,:));
         s=s+1;
+        xl(d) = xlabel('Time (s)');
+        yl(d) = ylabel('Solution cost');
     end
     
     ylim(ax(d), [min(yrange(:,1)) max(min(yrange, [], 2) + .5 * diff(yrange,[],2))]);
@@ -239,10 +241,11 @@ end
 
 graphOptions.legend.fontsize = 18;
 graphOptions.axes.fontsize = 18;
+graphOptions.label.fontsize = 18;
 graphOptions.title.font = 'times';
 graphOptions.axes.yscale = 'linear';
 graphOptions.title.fontsize = 24;
 graphOptions.figure.height = 30;
 
 prettyExportFig(sprintf('%s_%s', graphOptions.export.name, iter),...
-    fig, ax, [], [], hl, t, graphOptions)
+    fig, ax, xl, yl, hl, t, graphOptions)
