@@ -3,7 +3,7 @@ options = getGraphOptions();
 options.plot.colors = cubehelix(8, .5, -1.5, 3, 1);
 options.export.do = true;
 options.export.format = 'eps';
-options.export.folder = 'C:\Data\Documents\PHD\papers\aaai17\images';
+options.export.folder = fullfile('data','aaai17','images');
 options.plot.errorbar = false;
 % options.plot.hi_error_fun = @(x) nanmean(x,2) + nanstd(x, [], 2);
 % options.plot.lo_error_fun = @(x) nanmean(x,2) - nanstd(x, [], 2);
@@ -15,7 +15,7 @@ options.label.Y = 'Solution cost';
 options.label.X = 'Running time (s)';
 
 %% Graph coloring experiment
-exp(1) = load('data\aaai17\results_graphColoring_delaunayGraph_i100_d3_n500_t20161118T175401.mat');
+exp(1) = load(fullfile('data','aaai17','results_graphColoring_delaunayGraph_i100_d3_n500_t20161118T175401.mat'));
 % exp(1).results = fixSleepyLaptop(exp(1).results);
 options.export.name = 'graph_coloring';
 

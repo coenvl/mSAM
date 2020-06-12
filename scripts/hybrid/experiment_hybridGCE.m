@@ -132,26 +132,26 @@ for iter = fieldnames(iterSolver)'
         solvername = sprintf('%s - %s', init{:}, iter{:});
         solverfield = matlab.lang.makeValidName(solvername);
         
-        plot(mean(resultsMat.(solverfield).costs, 2), 'LineWidth', 3);
-                density = mean(results.(solverfield).density);
-                uniquevalexplored = mean([results.(solverfield).uniquevalexplored{:}]);
-                numvalexplored = mean([results.(solverfield).allvalexplored{:}]);
-                allcombos = (density/2) * settings.nagents * settings.nagents * (settings.ncolors + incoroporateUnsetComparison) * (settings.ncolors + incoroporateUnsetComparison);
-                supercombos = (settings.ncolors + incoroporateUnsetComparison) ^ settings.nagents;
-                fprintf('%s average values explored: %1.2f in %1.2f tries\n', ... %, (of %1.2f, so coverage %1.2f %%, precision %1.2f %%)\n', ...
-                    solvername, uniquevalexplored, numvalexplored); %, supercombos, 100 * uniquevalexplored / supercombos, 100 * uniquevalexplored / numvalexplored);
+        plot(mean(resultsMat.(solverfield).times, 2), mean(resultsMat.(solverfield).costs, 2), 'LineWidth', 3);
+%                 density = mean(results.(solverfield).density);
+%                 uniquevalexplored = mean([results.(solverfield).uniquevalexplored{:}]);
+%                 numvalexplored = mean([results.(solverfield).allvalexplored{:}]);
+%                 allcombos = (density/2) * settings.nagents * settings.nagents * (settings.ncolors + incoroporateUnsetComparison) * (settings.ncolors + incoroporateUnsetComparison);
+%                 supercombos = (settings.ncolors + incoroporateUnsetComparison) ^ settings.nagents;
+%                 fprintf('%s average values explored: %1.2f in %1.2f tries\n', ... %, (of %1.2f, so coverage %1.2f %%, precision %1.2f %%)\n', ...
+%                     solvername, uniquevalexplored, numvalexplored); %, supercombos, 100 * uniquevalexplored / supercombos, 100 * uniquevalexplored / numvalexplored);
     end
     fprintf('\n');
     h = legend(fieldnames(initSolver));
     set(h,'interpreter', 'none');
     
-    for init = fieldnames(initSolver)'
-        solvername = sprintf('%s - %s', init{:}, iter{:});
-        solverfield = matlab.lang.makeValidName(solvername);
-        plot(min(resultsMat.(solverfield).costs, [], 2), 'LineWidth', 1);
-        %         plot(mean(resultsMat.(solverfield).costs, 2), 'LineWidth', 3);
-        plot(max(resultsMat.(solverfield).costs, [], 2), 'LineWidth', 1);
-    end
+%     for init = fieldnames(initSolver)'
+%         solvername = sprintf('%s - %s', init{:}, iter{:});
+%         solverfield = matlab.lang.makeValidName(solvername);
+%         plot(min(resultsMat.(solverfield).costs, [], 2), 'LineWidth', 1);
+%         %         plot(mean(resultsMat.(solverfield).costs, 2), 'LineWidth', 3);
+%         plot(max(resultsMat.(solverfield).costs, [], 2), 'LineWidth', 1);
+%     end
 end
 
 % fprintf(

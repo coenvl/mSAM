@@ -124,7 +124,7 @@ for iter = fieldnames(iterSolver)'
         solvername = sprintf('%s - %s', init{:}, iter{:});
         solverfield = matlab.lang.makeValidName(solvername);
         
-        plot(mean(resultsMat.(solverfield).costs, 2), 'LineWidth', 3);
+        plot(mean(resultsMat.(solverfield).times, 2), mean(resultsMat.(solverfield).costs, 2), 'LineWidth', 3);
         %         density = mean(results.(solverfield).density);
         %         uniquevalexplored = mean([results.(solverfield).uniquevalexplored{:}]);
         %         numvalexplored = mean([results.(solverfield).allvalexplored{:}]);
