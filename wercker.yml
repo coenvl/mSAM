@@ -1,5 +1,9 @@
 deploy:
+  box: debian:buster
   steps:
+    - script:
+        name: Install pre-reqs
+        code: apt update && apt install -y zip 
     - script:
         name: Build artefacts
         code: zip mSAM.zip experiment functions scripts startup.m
