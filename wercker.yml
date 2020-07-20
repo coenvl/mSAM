@@ -1,0 +1,5 @@
+deploy:
+  steps:
+    - script:
+        name: Build artefacts
+        code: zip mSAM.zip experiment functions scripts startup.m
